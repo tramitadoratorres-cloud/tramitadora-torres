@@ -1,0 +1,66 @@
+import "server-only";
+import { db } from "@/lib/db";
+import { logActividad } from "@/lib/actividad";
+import { ACTIVIDAD_TIPO, ETAPA_LABEL, type Etapa } from "@/lib/constants";
+
+// Cuando el pago o los documentos quedan listos, el caso avanza de etapa
+// automáticamente (basta con que UNA de las dos casillas se complete: el pago
+// en línea llega antes que los documentos, el flujo manual puede llegar junto
+// o documentos primero).
+export async function avanzarEtapaSiAplica(casoId: string) {
+  const caso = await db.caso.findUniqueOrThrow({ where: { id: casoId } });
+  if (
+    (caso.documentosRecibidos || caso.pagado) &&
+    (caso.etapa === "NUEVO_CONTACTO" || caso.etapa === "COTIZADO")
+  ) {
+    await db.caso.update({
+      where: { id: casoId },
+      data: { etapa: "DOCUMENTOS_PAGO" as Etapa },
+    });
+    await logActividad({
+      casoId,
+      userId: null,
+      tipo: ACTIVIDAD_TIPO.CAMBIO_ETAPA,
+      descripcion: `Caso avanzado automáticamente a "${ETAPA_LABEL.DOCUMENTOS_PAGO}"`,
+    });
+  }
+}
+
+// Genera el recibo del honorario en cuanto hay pago confirmado y un precio
+// asignado, si todavía no existe uno para este caso. Se usa tanto desde el
+// CRM (pago manual) como desde el webhook de Mercado Pago (pago en línea).
+export async function generarReciboSiFalta(
+  casoId: string,
+  userId: string | null
+) {
+  const caso = await db.caso.findUniqueOrThrow({
+    where: { id: casoId },
+    include: { recibos: true },
+  });
+
+  if (!caso.pagado || caso.precioCobrado == null || caso.recibos.length > 0) {
+    return caso.recibos[0] ?? null;
+  }
+
+  const totalRecibos = await db.recibo.count();
+  const recibo = await db.recibo.create({
+    data: {
+      casoId,
+      folio: totalRecibos + 1,
+      monto: caso.precioCobrado,
+      motivoAjuste: caso.motivoAjuste,
+      generadoPorId: userId,
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId,
+    tipo: ACTIVIDAD_TIPO.RECIBO_GENERADO,
+    descripcion: userId
+      ? `Recibo folio #${recibo.folio} generado`
+      : `Recibo folio #${recibo.folio} generado automáticamente (pago en línea)`,
+  });
+
+  return recibo;
+}

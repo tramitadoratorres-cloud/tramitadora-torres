@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Agente del equipo (gestoría). Todos los agentes ven todos los clientes.
+model User {
+  id           String         @id @default(cuid())
+  nombre       String
+  email        String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  actividades  ActividadLog[]
+  recibos      Recibo[]
+}
+
+// Catálogo de trámites. El honorario es solo referencia: cada Caso guarda el precio real cobrado.
+model TramiteCatalogo {
+  id            String  @id @default(cuid())
+  nombre        String
+  descripcion   String  @default("")
+  badge         String  @default("")
+  // Requisitos guardados como texto, un requisito por línea.
+  requisitos    String  @default("")
+  honorarioBase Int
+  destacado     Boolean @default(false)
+  activo        Boolean @default(true)
+  orden         Int     @default(0)
+  casos         Caso[]
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nombre    String
+  telefono  String
+  email     String?
+  createdAt DateTime @default(now())
+  casos     Caso[]
+}
+
+// Un Caso es un trámite en curso para un cliente, y la tarjeta que se mueve en el kanban.
+model Caso {
+  id                  String           @id @default(cuid())
+  clienteId           String
+  cliente             Cliente          @relation(fields: [clienteId], references: [id])
+  tramiteCatalogoId   String?
+  tramiteCatalogo     TramiteCatalogo? @relation(fields: [tramiteCatalogoId], references: [id])
+  etapa               String           @default("NUEVO_CONTACTO")
+  precioCobrado       Int?
+  motivoAjuste        String?
+  documentosRecibidos Boolean          @default(false)
+  pagado              Boolean          @default(false)
+  fechaPago           DateTime?
+  origen              String           @default("MANUAL")
+  mensaje             String?
+  // Pago en línea (Mercado Pago). Nulos cuando el pago fue manual/WhatsApp.
+  pagoPreferenciaId   String?
+  pagoId              String?
+  pagoMetodo          String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  actividades         ActividadLog[]
+  recibos             Recibo[]
+
+  @@index([etapa])
+}
+
+// Bitácora de actividad: visible para todo el equipo, no solo para quien la generó.
+model ActividadLog {
+  id          String   @id @default(cuid())
+  casoId      String
+  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  userId      String?
+  usuario     User?    @relation(fields: [userId], references: [id])
+  tipo        String
+  descripcion String
+  createdAt   DateTime @default(now())
+
+  @@index([casoId])
+}
+
+// Recibo del honorario de gestoría cobrado (nunca incluye cuotas de gobierno).
+model Recibo {
+  id            String   @id @default(cuid())
+  casoId        String
+  caso          Caso     @relation(fields: [casoId], references: [id])
+  folio         Int      @unique
+  monto         Int
+  motivoAjuste  String?
+  generadoPorId String?
+  generadoPor   User?    @relation(fields: [generadoPorId], references: [id])
+  createdAt     DateTime @default(now())
+}
