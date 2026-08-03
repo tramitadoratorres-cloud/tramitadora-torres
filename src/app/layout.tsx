@@ -22,7 +22,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Tramitadora Torres — Gestoría de Trámites Internacionales",
   description:
-    "Gestoría de trámites en Tijuana: pasaporte, visa de turista y SENTRI. Te decimos exactamente qué necesitas y le damos seguimiento a tu trámite de principio a fin.",
+    "Gestoría de trámites en línea con cobertura en todo México: pasaporte, visa de turista y SENTRI. Te decimos exactamente qué necesitas y le damos seguimiento a tu trámite de principio a fin.",
 };
 
 export default function RootLayout({

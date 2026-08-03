@@ -25,7 +25,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-gold-bright">
-              Gestoría de trámites · Tijuana
+              Gestoría de trámites en línea · Cobertura en todo México
             </p>
             <h1 className="mt-3 font-serif text-4xl font-semibold leading-tight text-cream sm:text-5xl">
               Tu pasaporte, visa o SENTRI,{" "}
