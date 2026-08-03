@@ -7,6 +7,10 @@ function wa(mensaje: string) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
 
+// Evita que Next intente prerenderizar esta página en build time, cuando la
+// base de datos todavía no existe en el servidor de despliegue.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const tramites = await db.tramiteCatalogo.findMany({
     where: { activo: true },
