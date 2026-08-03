@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import type { db } from "@/lib/db";
 import { actualizarTramiteAction, alternarActivoAction, type FormState } from "./actions";
+import { TramiteIcon, TRAMITE_ICONO_OPCIONES } from "@/components/tramite-icons";
 
 type Tramite = Awaited<ReturnType<typeof db.tramiteCatalogo.findMany>>[number];
 
@@ -10,13 +11,18 @@ const initialState: FormState = {};
 
 export function TramiteRow({ tramite }: { tramite: Tramite }) {
   const [editando, setEditando] = useState(false);
+  const [icono, setIcono] = useState(tramite.icono);
   const action = actualizarTramiteAction.bind(null, tramite.id);
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <div className="rounded-lg bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="flex gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-navy-900/5 text-navy-800">
+            <TramiteIcon icono={tramite.icono} className="h-6 w-6" />
+          </span>
+          <div>
           <div className="flex items-center gap-2">
             <h3 className="font-serif text-lg font-semibold text-ink">
               {tramite.nombre}
@@ -31,6 +37,7 @@ export function TramiteRow({ tramite }: { tramite: Tramite }) {
           <p className="mt-2 font-mono text-sm text-navy-700">
             Honorario base: ${tramite.honorarioBase} MXN
           </p>
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
           <button
@@ -108,6 +115,28 @@ export function TramiteRow({ tramite }: { tramite: Tramite }) {
               />
               Destacar en el sitio
             </label>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="font-mono text-xs uppercase tracking-wide text-ink/50">
+                Ilustración
+              </label>
+              <select
+                name="icono"
+                value={icono}
+                onChange={(e) => setIcono(e.target.value)}
+                className="rounded border border-ink/15 px-3 py-2 text-sm"
+              >
+                {TRAMITE_ICONO_OPCIONES.map((op) => (
+                  <option key={op.value} value={op.value}>
+                    {op.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-900/5 text-navy-800">
+              <TramiteIcon icono={icono} className="h-6 w-6" />
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <label className="font-mono text-xs uppercase tracking-wide text-ink/50">

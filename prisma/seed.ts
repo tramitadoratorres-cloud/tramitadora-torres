@@ -20,6 +20,7 @@ const TRAMITES = [
       "Te acompañamos desde la cita hasta la entrega de tu pasaporte.",
     badge: "Nuevo",
     honorarioBase: 500,
+    icono: "pasaporte",
     destacado: false,
     requisitos: [
       "Acta de nacimiento certificada",
@@ -34,6 +35,7 @@ const TRAMITES = [
       "Renueva tu pasaporte sin perder tiempo averiguando el proceso.",
     badge: "Renovación",
     honorarioBase: 500,
+    icono: "pasaporte",
     destacado: false,
     requisitos: [
       "Tu pasaporte anterior (se entrega para cancelación)",
@@ -48,6 +50,7 @@ const TRAMITES = [
       "Para ciudadanos americanos que ya tuvieron pasaporte previo.",
     badge: "EE.UU.",
     honorarioBase: 1000,
+    icono: "pasaporte",
     destacado: false,
     requisitos: [
       "Tu pasaporte americano anterior",
@@ -62,6 +65,7 @@ const TRAMITES = [
       "Te ayudamos a preparar tu solicitud y tu cita en la embajada.",
     badge: "Visa",
     honorarioBase: 1000,
+    icono: "visa",
     destacado: false,
     requisitos: [
       "Pasaporte mexicano vigente",
@@ -76,6 +80,7 @@ const TRAMITES = [
       "Los dos trámites juntos, con un solo seguimiento de principio a fin.",
     badge: "Paquete",
     honorarioBase: 1500,
+    icono: "paquete",
     destacado: true,
     requisitos: [
       "Todo lo del pasaporte nuevo o renovación",
@@ -89,6 +94,7 @@ const TRAMITES = [
       "Para quienes cruzan la frontera con frecuencia. Requiere visa o green card vigente.",
     badge: "Cruce rápido",
     honorarioBase: 1000,
+    icono: "sentri",
     destacado: false,
     requisitos: [
       "Documento vigente para entrar a EE.UU. (visa B1/B2, láser o green card)",

@@ -2,11 +2,13 @@
 
 import { useActionState, useRef, useState } from "react";
 import { crearTramiteAction, type FormState } from "./actions";
+import { TramiteIcon, TRAMITE_ICONO_OPCIONES } from "@/components/tramite-icons";
 
 const initialState: FormState = {};
 
 export function NuevoTramiteForm() {
   const [abierto, setAbierto] = useState(false);
+  const [icono, setIcono] = useState("documento");
   const [state, formAction, pending] = useActionState(
     crearTramiteAction,
     initialState
@@ -69,6 +71,28 @@ export function NuevoTramiteForm() {
         placeholder="Requisitos, uno por línea"
         className="rounded border border-ink/15 px-3 py-2 text-sm"
       />
+      <div className="flex items-end gap-3">
+        <div className="flex flex-1 flex-col gap-1">
+          <label className="font-mono text-xs uppercase tracking-wide text-ink/50">
+            Ilustración
+          </label>
+          <select
+            name="icono"
+            value={icono}
+            onChange={(e) => setIcono(e.target.value)}
+            className="rounded border border-ink/15 px-3 py-2 text-sm"
+          >
+            {TRAMITE_ICONO_OPCIONES.map((op) => (
+              <option key={op.value} value={op.value}>
+                {op.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-900/5 text-navy-800">
+          <TramiteIcon icono={icono} className="h-6 w-6" />
+        </span>
+      </div>
 
       {state.error && (
         <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">

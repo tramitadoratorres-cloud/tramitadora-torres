@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAgent } from "@/lib/session";
+import { TRAMITE_ICONOS } from "@/components/tramite-icons";
 
 export interface FormState {
   error?: string;
@@ -17,6 +18,7 @@ const tramiteSchema = z.object({
   honorarioBase: z.coerce.number().int().min(0),
   requisitos: z.string().optional(),
   destacado: z.coerce.boolean().optional(),
+  icono: z.enum(Object.keys(TRAMITE_ICONOS) as [string, ...string[]]).optional(),
 });
 
 export async function actualizarTramiteAction(
@@ -32,6 +34,7 @@ export async function actualizarTramiteAction(
     honorarioBase: formData.get("honorarioBase"),
     requisitos: formData.get("requisitos"),
     destacado: formData.get("destacado") === "on",
+    icono: formData.get("icono"),
   });
 
   if (!parsed.success) {
@@ -47,6 +50,7 @@ export async function actualizarTramiteAction(
       honorarioBase: parsed.data.honorarioBase,
       requisitos: parsed.data.requisitos ?? "",
       destacado: parsed.data.destacado ?? false,
+      icono: parsed.data.icono ?? "documento",
     },
   });
 
@@ -78,6 +82,7 @@ export async function crearTramiteAction(
     honorarioBase: formData.get("honorarioBase"),
     requisitos: formData.get("requisitos"),
     destacado: formData.get("destacado") === "on",
+    icono: formData.get("icono"),
   });
 
   if (!parsed.success) {
@@ -93,6 +98,7 @@ export async function crearTramiteAction(
       honorarioBase: parsed.data.honorarioBase,
       requisitos: parsed.data.requisitos ?? "",
       destacado: parsed.data.destacado ?? false,
+      icono: parsed.data.icono ?? "documento",
       orden: total + 1,
     },
   });

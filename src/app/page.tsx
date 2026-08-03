@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { formatMXN, WHATSAPP_NUMERO, WHATSAPP_DISPLAY } from "@/lib/constants";
 import { SiteNav } from "./site-nav";
 import { LeadForm } from "./lead-form";
+import { TramiteIcon } from "@/components/tramite-icons";
 
 function wa(mensaje: string) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
@@ -132,6 +133,19 @@ export default async function HomePage() {
                     tramite.destacado ? "outline outline-2 outline-gold" : ""
                   }`}
                 >
+                  <div className="relative flex h-32 items-center justify-center overflow-hidden bg-navy-900">
+                    <div
+                      className="absolute inset-0 opacity-20"
+                      style={{
+                        background:
+                          "radial-gradient(circle at 30% 20%, var(--color-gold-bright) 0%, transparent 60%)",
+                      }}
+                    />
+                    <TramiteIcon
+                      icono={tramite.icono}
+                      className="relative h-16 w-16 text-gold-bright"
+                    />
+                  </div>
                   <div className="p-5 pb-4">
                     <div className="flex items-start justify-between gap-2.5">
                       <span className="font-mono text-xs text-ink/50">

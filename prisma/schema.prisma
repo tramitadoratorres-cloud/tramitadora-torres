@@ -31,6 +31,9 @@ model TramiteCatalogo {
   // Requisitos guardados como texto, un requisito por línea.
   requisitos    String  @default("")
   honorarioBase Int
+  // Clave de la ilustración a mostrar en la tarjeta del sitio público.
+  // Ver src/components/tramite-icons.tsx para las claves disponibles.
+  icono         String  @default("documento")
   destacado     Boolean @default(false)
   activo        Boolean @default(true)
   orden         Int     @default(0)
