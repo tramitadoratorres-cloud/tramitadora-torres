@@ -78,7 +78,11 @@ export async function crearPagoAction(
       clienteNombre: parsed.data.nombre,
       clienteEmail: parsed.data.email,
     });
-    initPoint = preferencia.init_point ?? preferencia.sandbox_init_point;
+    // No usar sandbox_init_point como respaldo: si init_point falta, algo
+    // está mal con las credenciales o la cuenta (no está activada para
+    // producción), y es mejor mostrar un error que mandar al cliente a un
+    // checkout de prueba que nunca va a cobrar de verdad.
+    initPoint = preferencia.init_point;
     await db.caso.update({
       where: { id: caso.id },
       data: { pagoPreferenciaId: preferencia.id },
