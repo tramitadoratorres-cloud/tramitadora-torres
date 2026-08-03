@@ -54,10 +54,10 @@ export function CheckoutForm({ tramiteId }: { tramiteId: string }) {
         disabled={pending}
         className="rounded bg-gold px-5 py-3 font-mono text-sm font-semibold text-navy-900 transition hover:bg-gold-bright disabled:opacity-60"
       >
-        {pending ? "Redirigiendo a Mercado Pago…" : "Continuar al pago"}
+        {pending ? "Redirigiendo a Stripe…" : "Continuar al pago"}
       </button>
       <p className="text-center text-xs text-ink/45">
-        Pagas con tarjeta o en efectivo en OXXO a través de Mercado Pago.
+        Pagas con tarjeta o en efectivo en OXXO a través de Stripe.
       </p>
     </form>
   );

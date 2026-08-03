@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { logActividad } from "@/lib/actividad";
 import { ACTIVIDAD_TIPO, ORIGEN } from "@/lib/constants";
-import { crearPreferenciaPago, mercadoPagoConfigurado } from "@/lib/mercadopago";
+import { crearSesionPago, stripeConfigurado } from "@/lib/stripe";
 
 export interface CheckoutFormState {
   error?: string;
@@ -22,7 +22,7 @@ export async function crearPagoAction(
   _prevState: CheckoutFormState,
   formData: FormData
 ): Promise<CheckoutFormState> {
-  if (!mercadoPagoConfigurado()) {
+  if (!stripeConfigurado()) {
     return {
       error:
         "El pago en línea todavía no está configurado. Escríbenos por WhatsApp y con gusto te ayudamos a cotizar y pagar tu trámite.",
@@ -69,36 +69,31 @@ export async function crearPagoAction(
     descripcion: `Cliente inició pago en línea de "${tramite.nombre}" por ${tramite.honorarioBase} MXN`,
   });
 
-  let initPoint: string | undefined;
+  let checkoutUrl: string | null;
   try {
-    const preferencia = await crearPreferenciaPago({
+    const sesion = await crearSesionPago({
       casoId: caso.id,
       tramiteNombre: tramite.nombre,
       monto: tramite.honorarioBase,
-      clienteNombre: parsed.data.nombre,
       clienteEmail: parsed.data.email,
     });
-    // No usar sandbox_init_point como respaldo: si init_point falta, algo
-    // está mal con las credenciales o la cuenta (no está activada para
-    // producción), y es mejor mostrar un error que mandar al cliente a un
-    // checkout de prueba que nunca va a cobrar de verdad.
-    initPoint = preferencia.init_point;
+    checkoutUrl = sesion.url;
     await db.caso.update({
       where: { id: caso.id },
-      data: { pagoPreferenciaId: preferencia.id },
+      data: { pagoPreferenciaId: sesion.id },
     });
   } catch {
     return {
       error:
-        "No se pudo iniciar el pago con Mercado Pago. Intenta de nuevo o escríbenos por WhatsApp.",
+        "No se pudo iniciar el pago con Stripe. Intenta de nuevo o escríbenos por WhatsApp.",
     };
   }
 
-  if (!initPoint) {
+  if (!checkoutUrl) {
     return {
       error: "No se pudo iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.",
     };
   }
 
-  redirect(initPoint);
+  redirect(checkoutUrl);
 }

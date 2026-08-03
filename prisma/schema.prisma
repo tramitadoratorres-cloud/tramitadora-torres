@@ -64,10 +64,10 @@ model Caso {
   fechaPago           DateTime?
   origen              String           @default("MANUAL")
   mensaje             String?
-  // Pago en línea (Mercado Pago). Nulos cuando el pago fue manual/WhatsApp.
-  pagoPreferenciaId   String?
-  pagoId              String?
-  pagoMetodo          String?
+  // Pago en línea (Stripe Checkout). Nulos cuando el pago fue manual/WhatsApp.
+  pagoPreferenciaId   String? // id de la Checkout Session de Stripe
+  pagoId              String? // id del PaymentIntent de Stripe
+  pagoMetodo          String? // "card" | "oxxo"
   // Token del link privado del "ticket virtual" del cliente (/mi-tramite/<token>).
   // Separado del id interno para poder regenerarlo si se filtra el link.
   tokenPublico        String           @unique @default(cuid())
