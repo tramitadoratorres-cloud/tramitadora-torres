@@ -4,15 +4,11 @@ import { getSession } from "@/lib/session";
 import { generateReceiptPdf } from "@/lib/receipts";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ reciboId: string }> }
 ) {
-  const session = await getSession();
-  if (!session.userId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
   const { reciboId } = await params;
+  const token = new URL(request.url).searchParams.get("token");
 
   const recibo = await db.recibo.findUnique({
     where: { id: reciboId },
@@ -24,6 +20,16 @@ export async function GET(
 
   if (!recibo) {
     return NextResponse.json({ error: "Recibo no encontrado" }, { status: 404 });
+  }
+
+  // Acceso permitido a un agente con sesión, o a quien traiga el token
+  // privado del ticket virtual del cliente dueño de este recibo.
+  const session = await getSession();
+  const autorizado =
+    Boolean(session.userId) ||
+    (Boolean(token) && token === recibo.caso.tokenPublico);
+  if (!autorizado) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   const pdfBytes = await generateReceiptPdf({

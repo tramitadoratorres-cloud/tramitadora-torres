@@ -26,6 +26,10 @@ export function NotaForm({ casoId }: { casoId: string }) {
         placeholder="Ej. cliente confirmó cita para el jueves…"
         className="rounded border border-ink/15 bg-white px-3 py-2 text-sm text-ink"
       />
+      <label className="flex items-center gap-2 text-xs text-ink/60">
+        <input type="checkbox" name="visibleCliente" />
+        Compartir esta nota en el ticket virtual del cliente
+      </label>
       {state.error && (
         <p className="text-sm text-red-700">{state.error}</p>
       )}

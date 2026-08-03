@@ -45,3 +45,6 @@ next-env.d.ts
 # sqlite database
 /dev.db
 /dev.db-journal
+
+# archivos subidos localmente para clientes (en producción viven en el volumen)
+/uploads

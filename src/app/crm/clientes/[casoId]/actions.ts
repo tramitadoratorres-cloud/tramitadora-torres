@@ -103,6 +103,7 @@ export async function marcarPagoAction(casoId: string) {
 
 const notaSchema = z.object({
   nota: z.string().min(1, "Escribe una nota"),
+  visibleCliente: z.coerce.boolean().optional(),
 });
 
 export async function agregarNotaAction(
@@ -111,7 +112,10 @@ export async function agregarNotaAction(
   formData: FormData
 ): Promise<FormState> {
   const session = await requireAgent();
-  const parsed = notaSchema.safeParse({ nota: formData.get("nota") });
+  const parsed = notaSchema.safeParse({
+    nota: formData.get("nota"),
+    visibleCliente: formData.get("visibleCliente") === "on",
+  });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Nota inválida" };
   }
@@ -121,6 +125,7 @@ export async function agregarNotaAction(
     userId: session.userId,
     tipo: ACTIVIDAD_TIPO.NOTA,
     descripcion: parsed.data.nota,
+    visibleCliente: parsed.data.visibleCliente,
   });
 
   revalidatePath(`/crm/clientes/${casoId}`);

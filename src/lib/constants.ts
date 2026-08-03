@@ -18,6 +18,17 @@ export const ETAPA_LABEL: Record<Etapa, string> = {
   ENTREGADO: "Entregado / Cerrado",
 };
 
+// Etiquetas para el ticket virtual del cliente — mismo significado, redactado
+// para quien vive su propio trámite, no para el equipo interno.
+export const ETAPA_CLIENTE_LABEL: Record<Etapa, string> = {
+  NUEVO_CONTACTO: "Recibimos tu solicitud",
+  COTIZADO: "Cotización lista",
+  DOCUMENTOS_PAGO: "Pago y documentos confirmados",
+  EN_TRAMITE: "En trámite ante la dependencia",
+  LISTO_ENTREGA: "¡Listo para entregar!",
+  ENTREGADO: "Entregado",
+};
+
 export const ORIGEN = {
   WEB: "WEB",
   WEB_PAGO: "WEB_PAGO",
@@ -49,6 +60,20 @@ export const ACTIVIDAD_LABEL: Record<ActividadTipo, string> = {
   RECIBO_GENERADO: "Recibo generado",
   TRAMITE_ASIGNADO: "Trámite asignado",
   PRECIO_AJUSTADO: "Precio ajustado",
+};
+
+// Tipos de actividad generados por el sistema que por defecto se muestran
+// también en el ticket virtual del cliente (son "avances" de su trámite).
+// NOTA es la excepción: el agente decide caso por caso si compartirla.
+export const ACTIVIDAD_VISIBLE_CLIENTE_DEFAULT: Record<ActividadTipo, boolean> = {
+  CREACION: false,
+  CAMBIO_ETAPA: true,
+  NOTA: false,
+  DOCUMENTOS_RECIBIDOS: true,
+  PAGO_RECIBIDO: true,
+  RECIBO_GENERADO: true,
+  TRAMITE_ASIGNADO: true,
+  PRECIO_AJUSTADO: false,
 };
 
 export function formatMXN(pesos: number): string {

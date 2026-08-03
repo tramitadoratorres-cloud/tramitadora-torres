@@ -7,6 +7,9 @@ import { TramiteForm } from "./tramite-form";
 import { NotaForm } from "./nota-form";
 import { EtapaSelector } from "./etapa-selector";
 import { GenerarReciboButton } from "./recibo-button";
+import { CitasSection } from "./cita-form";
+import { ArchivosSection } from "./archivo-form";
+import { LinkCliente } from "./link-cliente";
 
 export default async function ClienteCasoPage({
   params,
@@ -21,6 +24,8 @@ export default async function ClienteCasoPage({
       cliente: true,
       tramiteCatalogo: true,
       recibos: { orderBy: { createdAt: "desc" } },
+      citas: { orderBy: { fecha: "asc" } },
+      archivos: { orderBy: { createdAt: "desc" } },
       actividades: {
         orderBy: { createdAt: "desc" },
         include: { usuario: true },
@@ -29,6 +34,9 @@ export default async function ClienteCasoPage({
   });
 
   if (!caso) notFound();
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const linkCliente = `${siteUrl}/mi-tramite/${caso.tokenPublico}`;
 
   const tramites = await db.tramiteCatalogo.findMany({
     where: { activo: true },
@@ -63,6 +71,18 @@ export default async function ClienteCasoPage({
               {caso.mensaje}
             </p>
           )}
+
+          <div className="mt-4 border-t border-ink/10 pt-4">
+            <p className="mb-2 font-mono text-xs uppercase tracking-wide text-ink/50">
+              Ticket virtual del cliente
+            </p>
+            <LinkCliente
+              casoId={caso.id}
+              url={linkCliente}
+              clienteNombre={caso.cliente.nombre}
+              telefono={caso.cliente.telefono}
+            />
+          </div>
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -138,6 +158,20 @@ export default async function ClienteCasoPage({
               </p>
             )}
           </div>
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 font-serif text-lg font-semibold text-ink">
+            Citas
+          </h2>
+          <CitasSection casoId={caso.id} citas={caso.citas} />
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 font-serif text-lg font-semibold text-ink">
+            Archivos para el cliente
+          </h2>
+          <ArchivosSection casoId={caso.id} archivos={caso.archivos} />
         </div>
       </div>
 

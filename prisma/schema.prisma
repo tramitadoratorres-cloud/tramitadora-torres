@@ -19,6 +19,7 @@ model User {
   createdAt    DateTime       @default(now())
   actividades  ActividadLog[]
   recibos      Recibo[]
+  archivos     Archivo[]
 }
 
 // Catálogo de trámites. El honorario es solo referencia: cada Caso guarda el precio real cobrado.
@@ -64,24 +65,61 @@ model Caso {
   pagoPreferenciaId   String?
   pagoId              String?
   pagoMetodo          String?
+  // Token del link privado del "ticket virtual" del cliente (/mi-tramite/<token>).
+  // Separado del id interno para poder regenerarlo si se filtra el link.
+  tokenPublico        String           @unique @default(cuid())
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   actividades         ActividadLog[]
   recibos             Recibo[]
+  citas               Cita[]
+  archivos            Archivo[]
 
   @@index([etapa])
 }
 
 // Bitácora de actividad: visible para todo el equipo, no solo para quien la generó.
+// visibleCliente marca cuáles de estas entradas también se muestran en el
+// ticket virtual público del cliente (avances de su trámite).
 model ActividadLog {
-  id          String   @id @default(cuid())
-  casoId      String
-  caso        Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
-  userId      String?
-  usuario     User?    @relation(fields: [userId], references: [id])
-  tipo        String
-  descripcion String
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  casoId         String
+  caso           Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  userId         String?
+  usuario        User?    @relation(fields: [userId], references: [id])
+  tipo           String
+  descripcion    String
+  visibleCliente Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([casoId])
+}
+
+// Cita agendada para el trámite (ej. SRE, embajada, CBP). Visible para el cliente.
+model Cita {
+  id        String   @id @default(cuid())
+  casoId    String
+  caso      Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  fecha     DateTime
+  lugar     String   @default("")
+  nota      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([casoId])
+}
+
+// Archivo subido por la gestoría para el cliente (formas, documentos, comprobantes).
+model Archivo {
+  id            String   @id @default(cuid())
+  casoId        String
+  caso          Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  nombre        String
+  rutaArchivo   String
+  mimeType      String
+  tamano        Int
+  subidoPorId   String?
+  subidoPor     User?    @relation(fields: [subidoPorId], references: [id])
+  createdAt     DateTime @default(now())
 
   @@index([casoId])
 }
