@@ -43,7 +43,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   });
 
   const logoBytes = await readFile(
-    path.join(process.cwd(), "public/assets/logo.png")
+    path.join(process.cwd(), "public/assets/logo-mono.png")
   );
   const logoImage = await doc.embedPng(logoBytes);
   const logoBadgeRadius = 22;
