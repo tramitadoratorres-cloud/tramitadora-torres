@@ -82,7 +82,8 @@ export async function crearPagoAction(
       where: { id: caso.id },
       data: { pagoPreferenciaId: sesion.id },
     });
-  } catch {
+  } catch (e) {
+    console.error("Error creando la sesión de pago de Stripe:", e);
     return {
       error:
         "No se pudo iniciar el pago con Stripe. Intenta de nuevo o escríbenos por WhatsApp.",
