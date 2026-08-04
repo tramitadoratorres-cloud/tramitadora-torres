@@ -48,25 +48,17 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
     path.join(process.cwd(), "public/assets/logo-mono.png")
   );
   const logoImage = await doc.embedPng(logoBytes);
-  const logoBadgeRadius = 22;
-  const logoBadgeCenter = { x: 40, y: height - headerHeight / 2 };
-  page.drawEllipse({
-    x: logoBadgeCenter.x,
-    y: logoBadgeCenter.y,
-    xScale: logoBadgeRadius,
-    yScale: logoBadgeRadius,
-    color: PAPER,
-  });
-  const logoSize = logoBadgeRadius * 1.6;
+  const logoCenter = { x: 40, y: height - headerHeight / 2 };
+  const logoSize = 44;
   const logoScaled = logoImage.scale(logoSize / logoImage.width);
   page.drawImage(logoImage, {
-    x: logoBadgeCenter.x - logoScaled.width / 2,
-    y: logoBadgeCenter.y - logoScaled.height / 2,
+    x: logoCenter.x - logoScaled.width / 2,
+    y: logoCenter.y - logoScaled.height / 2,
     width: logoScaled.width,
     height: logoScaled.height,
   });
 
-  const textX = logoBadgeCenter.x + logoBadgeRadius + 14;
+  const textX = logoCenter.x + logoSize / 2 + 14;
   page.drawText("TRAMITADORA TORRES", {
     x: textX,
     y: height - 42,

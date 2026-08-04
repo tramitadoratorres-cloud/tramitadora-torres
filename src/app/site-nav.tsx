@@ -11,9 +11,7 @@ export function SiteNav() {
     <header className="sticky top-0 z-50 border-b border-cream/10 bg-navy-900/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
         <a href="#" className="flex items-center gap-2.5 font-serif text-xl font-bold text-cream">
-          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-paper">
-            <Image src="/assets/logo-mono.png" alt="" width={36} height={36} className="object-cover" />
-          </span>
+          <Image src="/assets/logo-mono.png" alt="" width={34} height={34} />
           Tramitadora Torres
         </a>
         <button
