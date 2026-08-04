@@ -17,7 +17,7 @@ CREATE TABLE "new_FormularioDS160" (
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "FormularioDS160_casoId_fkey" FOREIGN KEY ("casoId") REFERENCES "Caso" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
-INSERT INTO "new_FormularioDS160" ("casoId", "createdAt", "datosJson", "enviado", "id", "updatedAt") SELECT "casoId", "createdAt", "datosJson", "enviado", "id", "updatedAt" FROM "FormularioDS160";
+INSERT INTO "new_FormularioDS160" ("id", "casoId", "token", "datosJson", "enviado", "createdAt", "updatedAt") SELECT "id", "casoId", lower(hex(randomblob(16))), "datosJson", "enviado", "createdAt", "updatedAt" FROM "FormularioDS160";
 DROP TABLE "FormularioDS160";
 ALTER TABLE "new_FormularioDS160" RENAME TO "FormularioDS160";
 CREATE UNIQUE INDEX "FormularioDS160_token_key" ON "FormularioDS160"("token");
