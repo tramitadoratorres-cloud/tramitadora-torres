@@ -1,6 +1,22 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { WHATSAPP_NUMERO } from "@/lib/constants";
+import { getStripeClient } from "@/lib/stripe";
+
+// La Payment Link de Stripe se configura (en el dashboard) para redirigir
+// aquí con ?session_id={CHECKOUT_SESSION_ID} tras el pago. Ese id lo resolvemos
+// contra Stripe para saber a qué caso corresponde (client_reference_id).
+// Si Stripe no responde, no pasa nada grave: el webhook ya marca el pago por
+// su cuenta y aquí simplemente mostramos un mensaje genérico de "en proceso".
+async function resolverCasoIdDesdeSesion(sessionId: string) {
+  try {
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    return session.client_reference_id ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export default async function EstadoPagoPage({
   searchParams,
@@ -8,7 +24,11 @@ export default async function EstadoPagoPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const casoId = typeof params.caso === "string" ? params.caso : undefined;
+  const sessionId =
+    typeof params.session_id === "string" ? params.session_id : undefined;
+  const casoId =
+    (typeof params.caso === "string" ? params.caso : undefined) ??
+    (sessionId ? await resolverCasoIdDesdeSesion(sessionId) : undefined);
   const status =
     (typeof params.status === "string" && params.status) ||
     (typeof params.collection_status === "string" && params.collection_status) ||

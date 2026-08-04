@@ -4,8 +4,8 @@ Proyecto completo para la gestoría: sitio público con catálogo de trámites y
 pago en línea, CRM interno para el equipo (tablero kanban, bitácora de
 actividad, catálogo editable) y generación de recibos en PDF.
 
-Construido con Next.js 16 (App Router), Prisma + SQLite, y Stripe Checkout
-para pagos en línea.
+Construido con Next.js 16 (App Router), Prisma + SQLite, y Stripe Payment
+Links para pagos en línea.
 
 ## Requisitos
 
@@ -31,10 +31,10 @@ Copia `.env.example` a `.env` (si no existe ya) y revisa estos valores:
   ```
 - `NEXT_PUBLIC_SITE_URL`: la URL pública del sitio. En local déjala como
   `http://localhost:3000`. En producción, cámbiala por tu dominio real
-  (`https://tudominio.com`), sin `/` al final — Stripe la necesita para
-  redirigir al cliente después de pagar.
+  (`https://tudominio.com`), sin `/` al final — se usa para generar los links
+  que se comparten con los clientes (ticket virtual, DS-160, etc.).
 - `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`: ver la sección de pagos en
-  línea abajo. Mientras estén vacíos, el botón "Pagar en línea" del sitio
+  línea abajo. Un trámite sin link de pago configurado en el catálogo
   muestra un aviso amigable en vez de fallar.
 
 ## Base de datos
@@ -78,38 +78,50 @@ Abre [http://localhost:3000](http://localhost:3000) para el sitio público, y
 - `prisma/seed.ts` — catálogo inicial + usuario admin.
 - `src/lib/receipts.ts` — diseño del PDF del recibo.
 
-## Pagos en línea (Stripe)
+## Pagos en línea (Stripe Payment Links)
 
-El sitio permite pagar cada trámite en línea (tarjeta u OXXO) al precio de
-catálogo fijo, sin descuentos — los descuentos solo se aplican en el flujo
-manual por WhatsApp desde el CRM. Al confirmarse el pago, el sistema crea el
-cliente en el CRM, marca el pago como recibido y genera el recibo
-automáticamente.
+El sitio permite pagar cada trámite en línea al precio de catálogo fijo, sin
+descuentos — los descuentos solo se aplican en el flujo manual por WhatsApp
+desde el CRM. El pago en sí lo procesa una **Payment Link** de Stripe (creada
+a mano en su dashboard, sin código ni llamadas a su API desde nuestro
+servidor); nuestro sistema solo arma el link con los datos del caso y, cuando
+Stripe confirma el pago, un webhook marca el pago como recibido y genera el
+recibo automáticamente.
 
-Para activarlo:
+Para activarlo, por cada trámite que quieras vender en línea:
 
-1. Entra a [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys).
-2. En modo **prueba** (toggle "Test mode" arriba a la derecha), copia la
-   **Secret key** (`sk_test_...`) — te sirve para probar todo el flujo sin
-   mover dinero real, con las [tarjetas de prueba de Stripe](https://stripe.com/docs/testing).
-3. Pégala en `.env` como `STRIPE_SECRET_KEY`.
-4. Ve a [dashboard.stripe.com/webhooks](https://dashboard.stripe.com/webhooks)
+1. Entra a [dashboard.stripe.com/payment-links](https://dashboard.stripe.com/payment-links)
+   → "Nuevo link de pago".
+2. Crea un producto con el **mismo precio** que el honorario base del trámite
+   en el catálogo (en MXN), y activa los métodos de pago que quieras aceptar
+   (tarjeta, OXXO, etc.) desde ahí mismo.
+3. En "Después del pago", elige "Redirigir a tu web" y usa como URL:
+   `https://<tu-dominio>/pagar/estado?session_id={CHECKOUT_SESSION_ID}`
+   (Stripe reemplaza `{CHECKOUT_SESSION_ID}` automáticamente).
+4. Copia el link generado (`https://buy.stripe.com/...`) y pégalo en
+   **CRM → Catálogo → Editar** ese trámite, en el campo "Link de pago".
+5. Repite para cada trámite que quieras vender en línea. Los que se dejen sin
+   link simplemente no muestran el botón de pago en línea (el cliente puede
+   seguir escribiendo por WhatsApp).
+
+Además, una sola vez, configura el webhook para que el pago se marque
+automáticamente:
+
+1. Ve a [dashboard.stripe.com/webhooks](https://dashboard.stripe.com/webhooks)
    → "Add endpoint" → como URL pon `<tu-dominio>/api/pagos/stripe`, y
    selecciona los eventos `checkout.session.completed` y
    `checkout.session.async_payment_succeeded`. Copia el **Signing secret**
-   (`whsec_...`) del endpoint y pégalo como `STRIPE_WEBHOOK_SECRET`.
-5. Cuando quieras cobrar de verdad, repite los pasos 1-4 en modo
-   **producción** (mismo dashboard, toggle apagado) y actualiza ambas
-   variables con las claves de producción.
+   (`whsec_...`) del endpoint y pégalo en Railway como `STRIPE_WEBHOOK_SECRET`.
+2. También necesitas `STRIPE_SECRET_KEY` (cualquier Secret Key de tu cuenta,
+   [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys)) — el
+   webhook la usa solo para verificar la firma de cada evento y, si puede,
+   consultar el método de pago exacto; si esa consulta llegara a fallar, el
+   pago se marca igual, solo sin ese detalle.
 
-**Importante sobre el webhook en local:** Stripe necesita poder llamar a tu
-servidor por internet para avisar que un pago se confirmó
-(`/api/pagos/stripe`). En `localhost` eso no es posible directamente — para
-probarlo en desarrollo usa el [Stripe CLI](https://stripe.com/docs/stripe-cli)
-(`stripe listen --forward-to localhost:3000/api/pagos/stripe`, que te da un
-`whsec_...` temporal para pruebas) o una herramienta de túnel como
-[ngrok](https://ngrok.com). En producción, con un dominio real públicamente
-accesible, el endpoint configurado en el paso 4 funciona sin nada adicional.
+Si el webhook fallara por cualquier motivo, el pago nunca se pierde: en el
+dashboard de Stripe siempre se ve el cobro, y desde el CRM se puede marcar
+"Pago recibido" manualmente en el caso correspondiente — el recibo se genera
+igual en ese momento.
 
 ## Desplegar en producción
 

@@ -5,7 +5,6 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { logActividad } from "@/lib/actividad";
 import { ACTIVIDAD_TIPO, ORIGEN } from "@/lib/constants";
-import { crearSesionPago, stripeConfigurado } from "@/lib/stripe";
 
 export interface CheckoutFormState {
   error?: string;
@@ -22,13 +21,6 @@ export async function crearPagoAction(
   _prevState: CheckoutFormState,
   formData: FormData
 ): Promise<CheckoutFormState> {
-  if (!stripeConfigurado()) {
-    return {
-      error:
-        "El pago en línea todavía no está configurado. Escríbenos por WhatsApp y con gusto te ayudamos a cotizar y pagar tu trámite.",
-    };
-  }
-
   const parsed = schema.safeParse({
     nombre: formData.get("nombre"),
     telefono: formData.get("telefono"),
@@ -44,6 +36,13 @@ export async function crearPagoAction(
   });
   if (!tramite || !tramite.activo) {
     return { error: "Este trámite ya no está disponible." };
+  }
+
+  if (!tramite.linkPago) {
+    return {
+      error:
+        "El pago en línea todavía no está configurado para este trámite. Escríbenos por WhatsApp y con gusto te ayudamos a cotizar y pagar.",
+    };
   }
 
   const cliente = await db.cliente.create({
@@ -69,35 +68,13 @@ export async function crearPagoAction(
     descripcion: `Cliente inició pago en línea de "${tramite.nombre}" por ${tramite.honorarioBase} MXN`,
   });
 
-  let checkoutUrl: string | null;
-  try {
-    const sesion = await crearSesionPago({
-      casoId: caso.id,
-      tramiteNombre: tramite.nombre,
-      monto: tramite.honorarioBase,
-      clienteEmail: parsed.data.email,
-    });
-    checkoutUrl = sesion.url;
-    await db.caso.update({
-      where: { id: caso.id },
-      data: { pagoPreferenciaId: sesion.id },
-    });
-  } catch (e) {
-    console.error("Error creando la sesión de pago de Stripe:", e);
-    // TODO: quitar el detalle del error una vez diagnosticado el problema
-    // en producción; por ahora ayuda a ver la causa exacta sin depender
-    // de los logs de Railway.
-    const detalle = e instanceof Error ? e.message : String(e);
-    return {
-      error: `No se pudo iniciar el pago con Stripe. Detalle: ${detalle}`,
-    };
-  }
+  // Stripe Payment Link: se crea manualmente en el dashboard de Stripe (sin
+  // llamadas a su API desde nuestro servidor). client_reference_id viaja en
+  // la URL y Stripe lo reenvía tal cual en el webhook checkout.session.completed,
+  // así sabemos a qué caso corresponde el pago.
+  const url = new URL(tramite.linkPago);
+  url.searchParams.set("client_reference_id", caso.id);
+  url.searchParams.set("prefilled_email", parsed.data.email);
 
-  if (!checkoutUrl) {
-    return {
-      error: "No se pudo iniciar el pago. Intenta de nuevo o escríbenos por WhatsApp.",
-    };
-  }
-
-  redirect(checkoutUrl);
+  redirect(url.toString());
 }

@@ -37,6 +37,10 @@ model TramiteCatalogo {
   destacado     Boolean @default(false)
   activo        Boolean @default(true)
   orden         Int     @default(0)
+  // Link de pago de Stripe (Payment Link) para este trámite, creado
+  // manualmente en el dashboard de Stripe. Si está vacío, el pago en línea
+  // no está disponible y se le pide al cliente escribir por WhatsApp.
+  linkPago      String  @default("")
   casos         Caso[]
 }
 

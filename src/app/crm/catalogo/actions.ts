@@ -19,6 +19,13 @@ const tramiteSchema = z.object({
   requisitos: z.string().optional(),
   destacado: z.coerce.boolean().optional(),
   icono: z.enum(Object.keys(TRAMITE_ICONOS) as [string, ...string[]]).optional(),
+  linkPago: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || z.string().url().safeParse(v).success, {
+      message: "El link de pago debe ser una URL válida (o déjalo vacío)",
+    })
+    .optional(),
 });
 
 export async function actualizarTramiteAction(
@@ -35,6 +42,7 @@ export async function actualizarTramiteAction(
     requisitos: formData.get("requisitos"),
     destacado: formData.get("destacado") === "on",
     icono: formData.get("icono"),
+    linkPago: formData.get("linkPago"),
   });
 
   if (!parsed.success) {
@@ -51,6 +59,7 @@ export async function actualizarTramiteAction(
       requisitos: parsed.data.requisitos ?? "",
       destacado: parsed.data.destacado ?? false,
       icono: parsed.data.icono ?? "documento",
+      linkPago: parsed.data.linkPago ?? "",
     },
   });
 

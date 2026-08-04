@@ -149,6 +149,23 @@ export function TramiteRow({ tramite }: { tramite: Tramite }) {
               className="rounded border border-ink/15 px-3 py-2 text-sm"
             />
           </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-mono text-xs uppercase tracking-wide text-ink/50">
+              Link de pago (Stripe Payment Link)
+            </label>
+            <input
+              type="url"
+              name="linkPago"
+              placeholder="https://buy.stripe.com/..."
+              defaultValue={tramite.linkPago}
+              className="rounded border border-ink/15 px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-ink/45">
+              Créalo en tu dashboard de Stripe (Payment Links) con el mismo
+              precio que el honorario base y pégalo aquí. Si lo dejas vacío,
+              el botón de pago en línea no aparece para este trámite.
+            </p>
+          </div>
 
           {state.error && (
             <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">

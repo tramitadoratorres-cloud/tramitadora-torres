@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { formatMXN } from "@/lib/constants";
+import { formatMXN, WHATSAPP_NUMERO } from "@/lib/constants";
 import { CheckoutForm } from "./checkout-form";
 
 export default async function PagarTramitePage({
@@ -49,7 +49,27 @@ export default async function PagarTramitePage({
           </p>
 
           <div className="mt-6 border-t border-ink/10 pt-6">
-            <CheckoutForm tramiteId={tramite.id} />
+            {tramite.linkPago ? (
+              <CheckoutForm tramiteId={tramite.id} />
+            ) : (
+              <div className="flex flex-col gap-3 text-center">
+                <p className="text-sm text-ink/60">
+                  El pago en línea todavía no está disponible para este
+                  trámite. Escríbenos por WhatsApp y con gusto te ayudamos a
+                  cotizar y pagar.
+                </p>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(
+                    `Hola, quiero pagar en línea el trámite de ${tramite.nombre}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded bg-gold px-5 py-3 font-mono text-sm font-semibold text-navy-900 hover:bg-gold-bright"
+                >
+                  Escribir por WhatsApp
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
