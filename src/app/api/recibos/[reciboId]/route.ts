@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { generateReceiptPdf } from "@/lib/receipts";
+import { formatFolio } from "@/lib/constants";
 
 export async function GET(
   request: Request,
@@ -32,6 +33,9 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const enlaceSeguimiento = `${siteUrl}/mi-tramite/${recibo.caso.tokenPublico}`;
+
   const pdfBytes = await generateReceiptPdf({
     folio: recibo.folio,
     fecha: recibo.createdAt,
@@ -41,13 +45,14 @@ export async function GET(
     monto: recibo.monto,
     motivoAjuste: recibo.motivoAjuste,
     agenteNombre: recibo.generadoPor?.nombre,
+    enlaceSeguimiento,
   });
 
   return new NextResponse(Buffer.from(pdfBytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="recibo-${String(recibo.folio).padStart(5, "0")}.pdf"`,
+      "Content-Disposition": `inline; filename="recibo-${formatFolio(recibo.folio)}.pdf"`,
     },
   });
 }

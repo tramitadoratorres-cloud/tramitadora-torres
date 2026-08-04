@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ACTIVIDAD_LABEL, formatMXN, type Etapa } from "@/lib/constants";
+import { ACTIVIDAD_LABEL, formatFolio, formatMXN, type Etapa } from "@/lib/constants";
 import { marcarDocumentosAction, marcarPagoAction } from "./actions";
 import { TramiteForm } from "./tramite-form";
 import { NotaForm } from "./nota-form";
@@ -133,7 +133,7 @@ export default async function ClienteCasoPage({
                     <span>
                       Recibo{" "}
                       <span className="font-mono">
-                        #{String(recibo.folio).padStart(5, "0")}
+                        {formatFolio(recibo.folio)}
                       </span>{" "}
                       · {formatMXN(recibo.monto)}
                     </span>

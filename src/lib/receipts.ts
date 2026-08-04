@@ -1,8 +1,9 @@
 import "server-only";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { formatMXN } from "@/lib/constants";
+import { PDFDocument, rgb, StandardFonts, type PDFPage } from "pdf-lib";
+import { formatFolio, formatMXN } from "@/lib/constants";
+import { generarMatrizQR } from "@/lib/qr";
 
 const NAVY = rgb(0x0f / 255, 0x21 / 255, 0x38 / 255);
 const GOLD = rgb(0xc8 / 255, 0x9a / 255, 0x3f / 255);
@@ -19,12 +20,13 @@ export interface ReceiptData {
   monto: number;
   motivoAjuste?: string | null;
   agenteNombre?: string | null;
+  enlaceSeguimiento: string;
 }
 
 export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const width = 460;
-  const height = 620;
+  const height = 660;
   const page = doc.addPage([width, height]);
 
   const helvetica = await doc.embedFont(StandardFonts.Helvetica);
@@ -79,7 +81,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
     font: courier,
     color: rgb(0.92, 0.92, 0.87),
   });
-  const folioText = `FOLIO #${String(data.folio).padStart(5, "0")}`;
+  const folioText = `FOLIO ${formatFolio(data.folio)}`;
   const folioSize = 11;
   const folioWidth = courier.widthOfTextAtSize(folioText, folioSize);
   page.drawText(folioText, {
@@ -132,29 +134,43 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
     field("Atendio", data.agenteNombre);
   }
 
-  // barcode decorativo
-  const barcodeY = 110;
-  const barcodeHeight = 34;
-  let barX = leftX;
-  let seed = data.folio * 7 + 13;
-  while (barX < width - leftX) {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    const barWidth = 2.5 + (seed % 4);
-    if (seed % 5 !== 0) {
-      page.drawRectangle({
-        x: barX,
-        y: barcodeY,
-        width: barWidth,
-        height: barcodeHeight,
-        color: INK,
-      });
-    }
-    barX += barWidth + 1.5;
-  }
+  // QR con el link al ticket virtual del cliente, para dar seguimiento en línea
+  const qrSize = 90;
+  const qrY = 92;
+  const qrMatrix = generarMatrizQR(data.enlaceSeguimiento);
+  drawQrCode(page, qrMatrix, leftX, qrY, qrSize, INK);
+
+  const qrTextX = leftX + qrSize + 16;
+  const qrTextWidth = width - leftX - qrTextX;
+  page.drawText("DA SEGUIMIENTO A TU TRAMITE EN LINEA", {
+    x: qrTextX,
+    y: qrY + qrSize - 10,
+    size: 7.5,
+    font: courier,
+    color: INK_FAINT,
+  });
+  drawWrappedUrl(
+    page,
+    data.enlaceSeguimiento,
+    qrTextX,
+    qrY + qrSize - 26,
+    qrTextWidth,
+    7.5,
+    courier,
+    NAVY,
+    10
+  );
+  page.drawText("Escanea el codigo QR o visita el enlace", {
+    x: qrTextX,
+    y: qrY + 6,
+    size: 7.5,
+    font: helvetica,
+    color: INK_FAINT,
+  });
 
   page.drawLine({
-    start: { x: leftX, y: 90 },
-    end: { x: width - leftX, y: 90 },
+    start: { x: leftX, y: 82 },
+    end: { x: width - leftX, y: 82 },
     thickness: 0.5,
     color: INK_FAINT,
     dashArray: [2, 2],
@@ -165,6 +181,31 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
   drawWrappedText(page, disclaimer, leftX, 74, width - leftX * 2, 8, helvetica, INK_FAINT, 10);
 
   return doc.save();
+}
+
+function drawQrCode(
+  page: PDFPage,
+  matriz: boolean[][],
+  x: number,
+  y: number,
+  size: number,
+  color: ReturnType<typeof rgb>
+) {
+  const modulos = matriz.length;
+  const celda = size / modulos;
+  for (let row = 0; row < modulos; row++) {
+    for (let col = 0; col < modulos; col++) {
+      if (matriz[row][col]) {
+        page.drawRectangle({
+          x: x + col * celda,
+          y: y + (modulos - 1 - row) * celda,
+          width: celda,
+          height: celda,
+          color,
+        });
+      }
+    }
+  }
 }
 
 function drawDashedRect(
@@ -180,6 +221,36 @@ function drawDashedRect(
   page.drawLine({ start: { x, y: y + h }, end: { x: x + w, y: y + h }, ...dash });
   page.drawLine({ start: { x, y }, end: { x, y: y + h }, ...dash });
   page.drawLine({ start: { x: x + w, y }, end: { x: x + w, y: y + h }, ...dash });
+}
+
+// Como drawWrappedText pero corta por caracter en vez de por palabra — una
+// URL larga no tiene espacios donde partir.
+function drawWrappedUrl(
+  page: PDFPage,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  fontSize: number,
+  font: import("pdf-lib").PDFFont,
+  color: ReturnType<typeof rgb>,
+  lineHeight: number
+) {
+  let line = "";
+  let cursorY = y;
+  for (const char of text) {
+    const testLine = line + char;
+    if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth && line) {
+      page.drawText(line, { x, y: cursorY, size: fontSize, font, color });
+      line = char;
+      cursorY -= lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) {
+    page.drawText(line, { x, y: cursorY, size: fontSize, font, color });
+  }
 }
 
 function drawWrappedText(

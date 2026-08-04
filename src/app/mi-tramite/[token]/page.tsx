@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   ETAPAS,
   ETAPA_CLIENTE_LABEL,
+  formatFolio,
   formatMXN,
   WHATSAPP_NUMERO,
   type Etapa,
@@ -154,7 +155,7 @@ export default async function MiTramitePage({
                   <span className="text-sm">
                     Recibo{" "}
                     <span className="font-mono">
-                      #{String(recibo.folio).padStart(5, "0")}
+                      {formatFolio(recibo.folio)}
                     </span>{" "}
                     · {formatMXN(recibo.monto)}
                   </span>

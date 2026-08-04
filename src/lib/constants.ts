@@ -86,3 +86,10 @@ export function formatMXN(pesos: number): string {
 
 export const WHATSAPP_NUMERO = "526644458145";
 export const WHATSAPP_DISPLAY = "+52 664 445 8145";
+
+// Los folios de recibo arrancan en este número (ver src/lib/recibo-helper.ts).
+export const FOLIO_INICIAL = 6846;
+
+export function formatFolio(folio: number): string {
+  return `TT${folio}`;
+}
