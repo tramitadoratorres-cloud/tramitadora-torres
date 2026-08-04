@@ -84,9 +84,12 @@ export async function crearPagoAction(
     });
   } catch (e) {
     console.error("Error creando la sesión de pago de Stripe:", e);
+    // TODO: quitar el detalle del error una vez diagnosticado el problema
+    // en producción; por ahora ayuda a ver la causa exacta sin depender
+    // de los logs de Railway.
+    const detalle = e instanceof Error ? e.message : String(e);
     return {
-      error:
-        "No se pudo iniciar el pago con Stripe. Intenta de nuevo o escríbenos por WhatsApp.",
+      error: `No se pudo iniciar el pago con Stripe. Detalle: ${detalle}`,
     };
   }
 
