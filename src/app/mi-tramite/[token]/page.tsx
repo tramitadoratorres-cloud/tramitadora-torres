@@ -112,15 +112,6 @@ export default async function MiTramitePage({
           )}
         </div>
 
-        <div className="mt-6 text-center">
-          <Link
-            href={`/forma-ds160/${token}`}
-            className="inline-block rounded border border-gold/40 bg-paper px-5 py-2.5 font-mono text-sm text-navy-900 shadow hover:border-gold"
-          >
-            Llenar mi forma DS-160
-          </Link>
-        </div>
-
         {caso.citas.length > 0 && (
           <section className="mt-8">
             <h2 className="mb-3 font-mono text-xs uppercase tracking-widest text-gold-bright">

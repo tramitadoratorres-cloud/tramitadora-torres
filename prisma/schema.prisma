@@ -77,23 +77,28 @@ model Caso {
   recibos             Recibo[]
   citas               Cita[]
   archivos            Archivo[]
-  formularioDS160     FormularioDS160?
+  formularios         FormularioDS160[]
 
   @@index([etapa])
 }
 
 // Respuestas del cuestionario DS-160 que el cliente llena por su cuenta.
-// Guardado como JSON libre (ver src/lib/ds160-campos.ts) porque no hay
-// campos obligatorios y el cliente puede llenarlo parcialmente o volver
-// a guardar varias veces.
+// Un caso puede tener varios (ej. una familia tramitando varias visas
+// juntas: cada persona llena el suyo). Guardado como JSON libre (ver
+// src/lib/ds160-campos.ts) porque no hay campos obligatorios.
 model FormularioDS160 {
   id         String   @id @default(cuid())
-  casoId     String   @unique
+  casoId     String
   caso       Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  // Link privado propio de este cuestionario (distinto del tokenPublico
+  // del caso, para poder mandarle a cada persona el suyo).
+  token      String   @unique @default(cuid())
   datosJson  String   @default("{}")
   enviado    Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([casoId])
 }
 
 // Bitácora de actividad: visible para todo el equipo, no solo para quien la generó.

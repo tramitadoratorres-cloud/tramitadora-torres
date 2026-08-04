@@ -13,16 +13,18 @@ export default async function FormaDS160Page({
 }) {
   const { token } = await params;
 
-  const caso = await db.caso.findUnique({
-    where: { tokenPublico: token },
-    include: { cliente: true, formularioDS160: true },
+  const formulario = await db.formularioDS160.findUnique({
+    where: { token },
+    include: { caso: { include: { cliente: true } } },
   });
 
-  if (!caso) notFound();
+  if (!formulario) notFound();
 
-  const datosIniciales: Record<string, string> = caso.formularioDS160
-    ? JSON.parse(caso.formularioDS160.datosJson)
-    : {};
+  const datosIniciales: Record<string, string> = JSON.parse(
+    formulario.datosJson
+  );
+  const nombreSaludo =
+    datosIniciales.nombreCompleto || formulario.caso.cliente.nombre;
 
   return (
     <main className="min-h-screen bg-navy-900 pb-16">
@@ -40,7 +42,7 @@ export default async function FormaDS160Page({
             Forma DS-160
           </p>
           <h1 className="mt-1 font-serif text-2xl font-semibold">
-            Hola{caso.cliente.nombre ? `, ${caso.cliente.nombre}` : ""}
+            Hola{nombreSaludo ? `, ${nombreSaludo}` : ""}
           </h1>
           <p className="mt-2 text-sm text-ink/70">
             Llena la información que tengas a la mano para tu solicitud de
@@ -48,6 +50,11 @@ export default async function FormaDS160Page({
             puedes llenar solo lo que sepas o tengas listo, guardar, y volver
             después a completar el resto. Cada vez que le das a &quot;Guardar
             respuestas&quot; se actualiza lo que ya tenías.
+          </p>
+          <p className="mt-2 text-xs text-ink/50">
+            Si tu trámite incluye a más de una persona (por ejemplo, toda tu
+            familia), cada quien debe llenar su propio cuestionario — pide a
+            tu gestor que te comparta tu link individual.
           </p>
         </div>
 
