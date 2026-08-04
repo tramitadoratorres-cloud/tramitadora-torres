@@ -11,6 +11,7 @@ import { CitasSection } from "./cita-form";
 import { ArchivosSection } from "./archivo-form";
 import { LinkCliente } from "./link-cliente";
 import { DS160Lista } from "./ds160-lista";
+import { ExpedienteSection } from "./expediente-section";
 
 export default async function ClienteCasoPage({
   params,
@@ -45,6 +46,12 @@ export default async function ClienteCasoPage({
     orderBy: { orden: "asc" },
   });
 
+  const hermanos = await db.caso.findMany({
+    where: { expedienteId: caso.expedienteId, id: { not: caso.id } },
+    include: { tramiteCatalogo: true },
+    orderBy: { createdAt: "asc" },
+  });
+
   const puedeGenerarRecibo = caso.pagado && caso.precioCobrado != null;
 
   return (
@@ -63,6 +70,11 @@ export default async function ClienteCasoPage({
                 {caso.cliente.telefono}
                 {caso.cliente.email ? ` · ${caso.cliente.email}` : ""}
               </p>
+              {caso.paraQuien && (
+                <p className="mt-1 text-sm text-ink/70">
+                  Este trámite es para: <strong>{caso.paraQuien}</strong>
+                </p>
+              )}
             </div>
             <EtapaSelector casoId={caso.id} etapaActual={caso.etapa as Etapa} />
           </div>
@@ -97,6 +109,22 @@ export default async function ClienteCasoPage({
             tramiteActualId={caso.tramiteCatalogoId}
             precioActual={caso.precioCobrado}
             motivoActual={caso.motivoAjuste}
+          />
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-1 font-serif text-lg font-semibold text-ink">
+            Expediente familiar
+          </h2>
+          <p className="mb-4 text-sm text-ink/60">
+            Otros trámites de este mismo contacto (ej. su pareja o un hijo
+            que también necesita tramitar algo).
+          </p>
+          <ExpedienteSection
+            casoId={caso.id}
+            clienteNombre={caso.cliente.nombre}
+            tramites={tramites}
+            hermanos={hermanos}
           />
         </div>
 

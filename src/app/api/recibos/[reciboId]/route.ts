@@ -39,7 +39,7 @@ export async function GET(
   const pdfBytes = await generateReceiptPdf({
     folio: recibo.folio,
     fecha: recibo.createdAt,
-    clienteNombre: recibo.caso.cliente.nombre,
+    clienteNombre: recibo.caso.paraQuien || recibo.caso.cliente.nombre,
     clienteTelefono: recibo.caso.cliente.telefono,
     tramiteNombre: recibo.caso.tramiteCatalogo?.nombre ?? "Trámite de gestoría",
     monto: recibo.monto,

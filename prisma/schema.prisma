@@ -45,10 +45,23 @@ model TramiteCatalogo {
 }
 
 model Cliente {
+  id         String       @id @default(cuid())
+  nombre     String
+  telefono   String
+  email      String?
+  createdAt  DateTime     @default(now())
+  casos      Caso[]
+  expedientes Expediente[]
+}
+
+// Agrupa varios Casos (trámites) del mismo contacto en un solo expediente
+// familiar — ej. una persona que tramita su pasaporte y además el de su
+// pareja e hijo. Todo Caso pertenece a exactamente un Expediente; los que
+// no se agrupan explícitamente simplemente viven solos en el suyo.
+model Expediente {
   id        String   @id @default(cuid())
-  nombre    String
-  telefono  String
-  email     String?
+  clienteId String
+  cliente   Cliente  @relation(fields: [clienteId], references: [id])
   createdAt DateTime @default(now())
   casos     Caso[]
 }
@@ -58,6 +71,12 @@ model Caso {
   id                  String           @id @default(cuid())
   clienteId           String
   cliente             Cliente          @relation(fields: [clienteId], references: [id])
+  expedienteId        String
+  expediente          Expediente       @relation(fields: [expedienteId], references: [id])
+  // Nombre de para quién es este trámite específico, si es distinto del
+  // contacto principal (ej. el cónyuge o un hijo). Si está vacío, el
+  // trámite es para el propio contacto (caso.cliente).
+  paraQuien           String?
   tramiteCatalogoId   String?
   tramiteCatalogo     TramiteCatalogo? @relation(fields: [tramiteCatalogoId], references: [id])
   etapa               String           @default("NUEVO_CONTACTO")
@@ -84,6 +103,7 @@ model Caso {
   formularios         FormularioDS160[]
 
   @@index([etapa])
+  @@index([expedienteId])
 }
 
 // Respuestas del cuestionario DS-160 que el cliente llena por su cuenta.

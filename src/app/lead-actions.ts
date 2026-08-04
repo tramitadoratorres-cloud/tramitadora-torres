@@ -39,9 +39,14 @@ export async function crearLeadAction(
     },
   });
 
+  const expediente = await db.expediente.create({
+    data: { clienteId: cliente.id },
+  });
+
   const caso = await db.caso.create({
     data: {
       clienteId: cliente.id,
+      expedienteId: expediente.id,
       tramiteCatalogoId: parsed.data.tramiteCatalogoId || null,
       mensaje: parsed.data.mensaje || null,
       origen: ORIGEN.WEB,

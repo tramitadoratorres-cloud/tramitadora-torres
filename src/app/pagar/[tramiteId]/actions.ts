@@ -53,9 +53,14 @@ export async function crearPagoAction(
     },
   });
 
+  const expediente = await db.expediente.create({
+    data: { clienteId: cliente.id },
+  });
+
   const caso = await db.caso.create({
     data: {
       clienteId: cliente.id,
+      expedienteId: expediente.id,
       tramiteCatalogoId: tramite.id,
       precioCobrado: tramite.honorarioBase,
       origen: ORIGEN.WEB_PAGO,

@@ -39,6 +39,12 @@ export default async function MiTramitePage({
   const etapaActualIndex = ETAPAS.indexOf(caso.etapa as Etapa);
   const q = `?token=${token}`;
 
+  const hermanos = await db.caso.findMany({
+    where: { expedienteId: caso.expedienteId, id: { not: caso.id } },
+    include: { tramiteCatalogo: true },
+    orderBy: { createdAt: "asc" },
+  });
+
   return (
     <main className="min-h-screen bg-navy-900 pb-16">
       <header className="border-b border-cream/10 py-5">
@@ -59,7 +65,7 @@ export default async function MiTramitePage({
             Ticket virtual
           </p>
           <h1 className="mt-1 font-serif text-2xl font-semibold sm:text-3xl">
-            {caso.cliente.nombre}
+            {caso.paraQuien || caso.cliente.nombre}
           </h1>
           <p className="mt-1 text-sm text-ink/60">
             {caso.tramiteCatalogo?.nombre ?? "Trámite por definir"}
@@ -219,6 +225,36 @@ export default async function MiTramitePage({
                 </li>
               ))}
             </ol>
+          </section>
+        )}
+
+        {hermanos.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 font-mono text-xs uppercase tracking-widest text-gold-bright">
+              Otros trámites de tu expediente
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {hermanos.map((h) => (
+                <li key={h.id}>
+                  <Link
+                    href={`/mi-tramite/${h.tokenPublico}`}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-paper p-4 text-ink shadow hover:shadow-md"
+                  >
+                    <span>
+                      <span className="block text-sm font-medium">
+                        {h.tramiteCatalogo?.nombre ?? "Trámite por definir"}
+                      </span>
+                      <span className="block text-xs text-ink/50">
+                        Para: {h.paraQuien || caso.cliente.nombre}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono text-xs text-navy-700 underline">
+                      Ver estatus
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

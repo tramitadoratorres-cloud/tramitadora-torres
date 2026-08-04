@@ -8,7 +8,11 @@ import { ETAPAS, ETAPA_LABEL, formatMXN, type Etapa } from "@/lib/constants";
 import { moverEtapaAction } from "./actions";
 
 type CasoConRelaciones = Awaited<ReturnType<typeof db.caso.findMany<{
-  include: { cliente: true; tramiteCatalogo: true };
+  include: {
+    cliente: true;
+    tramiteCatalogo: true;
+    expediente: { include: { _count: { select: { casos: true } } } };
+  };
 }>>>[number];
 
 export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
@@ -70,9 +74,19 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
                               snapshot.isDragging ? "opacity-90 shadow-lg" : ""
                             } ${isPending ? "opacity-80" : ""}`}
                           >
-                            <p className="font-sans text-sm font-semibold text-ink">
-                              {caso.cliente.nombre}
-                            </p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-sans text-sm font-semibold text-ink">
+                                {caso.paraQuien || caso.cliente.nombre}
+                              </p>
+                              {caso.expediente._count.casos > 1 && (
+                                <span
+                                  title="Este contacto tiene más trámites en su expediente"
+                                  className="shrink-0 rounded-full bg-navy-900/10 px-1.5 py-0.5 font-mono text-[10px] text-navy-800"
+                                >
+                                  👪 {caso.expediente._count.casos}
+                                </span>
+                              )}
+                            </div>
                             <p className="mt-0.5 text-xs text-ink/60">
                               {caso.tramiteCatalogo?.nombre ?? "Sin trámite asignado"}
                             </p>

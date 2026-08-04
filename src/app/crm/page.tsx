@@ -3,7 +3,11 @@ import { KanbanBoard } from "./kanban-board";
 
 export default async function CrmPage() {
   const casos = await db.caso.findMany({
-    include: { cliente: true, tramiteCatalogo: true },
+    include: {
+      cliente: true,
+      tramiteCatalogo: true,
+      expediente: { include: { _count: { select: { casos: true } } } },
+    },
     orderBy: { updatedAt: "desc" },
   });
 

@@ -132,6 +132,64 @@ export async function agregarNotaAction(
   return { ok: true };
 }
 
+const agregarTramiteExpedienteSchema = z.object({
+  tramiteCatalogoId: z.string().min(1, "Selecciona un trámite"),
+  precioCobrado: z.coerce.number().int().min(0, "El precio no puede ser negativo"),
+  paraQuien: z.string().optional(),
+});
+
+// Crea un Caso hermano dentro del mismo expediente familiar — ej. el mismo
+// contacto que ya tiene un trámite en el CRM ahora también necesita
+// tramitar el pasaporte de su cónyuge o de un hijo.
+export async function agregarTramiteExpedienteAction(
+  casoId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireAgent();
+  const parsed = agregarTramiteExpedienteSchema.safeParse({
+    tramiteCatalogoId: formData.get("tramiteCatalogoId"),
+    precioCobrado: formData.get("precioCobrado"),
+    paraQuien: formData.get("paraQuien"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const casoOrigen = await db.caso.findUniqueOrThrow({ where: { id: casoId } });
+  const tramite = await db.tramiteCatalogo.findUniqueOrThrow({
+    where: { id: parsed.data.tramiteCatalogoId },
+  });
+  const paraQuien = parsed.data.paraQuien?.trim() || null;
+
+  const nuevoCaso = await db.caso.create({
+    data: {
+      clienteId: casoOrigen.clienteId,
+      expedienteId: casoOrigen.expedienteId,
+      paraQuien,
+      tramiteCatalogoId: tramite.id,
+      precioCobrado: parsed.data.precioCobrado,
+      origen: casoOrigen.origen,
+      etapa: "COTIZADO",
+    },
+  });
+
+  await logActividad({
+    casoId: nuevoCaso.id,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.CREACION,
+    descripcion: `${session.nombre} agregó "${tramite.nombre}"${
+      paraQuien ? ` para ${paraQuien}` : ""
+    } al expediente familiar`,
+  });
+
+  revalidatePath(`/crm/clientes/${casoId}`);
+  revalidatePath(`/crm/clientes/${nuevoCaso.id}`);
+  revalidatePath("/crm");
+  return { ok: true };
+}
+
 export async function generarReciboAction(casoId: string) {
   const session = await requireAgent();
   const caso = await db.caso.findUniqueOrThrow({ where: { id: casoId } });
