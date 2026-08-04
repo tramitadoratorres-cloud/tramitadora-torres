@@ -10,6 +10,7 @@ import { GenerarReciboButton } from "./recibo-button";
 import { CitasSection } from "./cita-form";
 import { ArchivosSection } from "./archivo-form";
 import { LinkCliente } from "./link-cliente";
+import { DS160Resumen } from "./ds160-resumen";
 
 export default async function ClienteCasoPage({
   params,
@@ -26,6 +27,7 @@ export default async function ClienteCasoPage({
       recibos: { orderBy: { createdAt: "desc" } },
       citas: { orderBy: { fecha: "asc" } },
       archivos: { orderBy: { createdAt: "desc" } },
+      formularioDS160: true,
       actividades: {
         orderBy: { createdAt: "desc" },
         include: { usuario: true },
@@ -37,6 +39,10 @@ export default async function ClienteCasoPage({
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const linkCliente = `${siteUrl}/mi-tramite/${caso.tokenPublico}`;
+  const linkDS160 = `${siteUrl}/forma-ds160/${caso.tokenPublico}`;
+  const datosDS160: Record<string, string> = caso.formularioDS160
+    ? JSON.parse(caso.formularioDS160.datosJson)
+    : {};
 
   const tramites = await db.tramiteCatalogo.findMany({
     where: { activo: true },
@@ -172,6 +178,27 @@ export default async function ClienteCasoPage({
             Archivos para el cliente
           </h2>
           <ArchivosSection casoId={caso.id} archivos={caso.archivos} />
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-1 font-serif text-lg font-semibold text-ink">
+            Forma DS-160
+          </h2>
+          <p className="mb-4 text-sm text-ink/60">
+            El cliente la llena por su cuenta, sin campos obligatorios. Puede
+            guardar y volver después a completar el resto.
+          </p>
+          <LinkCliente
+            casoId={caso.id}
+            url={linkDS160}
+            clienteNombre={caso.cliente.nombre}
+            telefono={caso.cliente.telefono}
+            mensaje={`Hola ${caso.cliente.nombre}, aquí puedes llenar tu forma DS-160 (no es necesario terminarla de una vez, puedes guardar e ir completando): ${linkDS160}`}
+            mostrarRegenerar={false}
+          />
+          <div className="mt-5 border-t border-ink/10 pt-4">
+            <DS160Resumen datos={datosDS160} />
+          </div>
         </div>
       </div>
 

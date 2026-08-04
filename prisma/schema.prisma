@@ -77,8 +77,23 @@ model Caso {
   recibos             Recibo[]
   citas               Cita[]
   archivos            Archivo[]
+  formularioDS160     FormularioDS160?
 
   @@index([etapa])
+}
+
+// Respuestas del cuestionario DS-160 que el cliente llena por su cuenta.
+// Guardado como JSON libre (ver src/lib/ds160-campos.ts) porque no hay
+// campos obligatorios y el cliente puede llenarlo parcialmente o volver
+// a guardar varias veces.
+model FormularioDS160 {
+  id         String   @id @default(cuid())
+  casoId     String   @unique
+  caso       Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  datosJson  String   @default("{}")
+  enviado    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 // Bitácora de actividad: visible para todo el equipo, no solo para quien la generó.

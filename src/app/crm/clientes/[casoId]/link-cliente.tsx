@@ -8,17 +8,22 @@ export function LinkCliente({
   url,
   clienteNombre,
   telefono,
+  mensaje,
+  mostrarRegenerar = true,
 }: {
   casoId: string;
   url: string;
   clienteNombre: string;
   telefono: string;
+  mensaje?: string;
+  mostrarRegenerar?: boolean;
 }) {
   const [copiado, setCopiado] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const mensajeWhatsapp = encodeURIComponent(
-    `Hola ${clienteNombre}, aquí puedes ver el estatus de tu trámite en cualquier momento: ${url}`
+    mensaje ??
+      `Hola ${clienteNombre}, aquí puedes ver el estatus de tu trámite en cualquier momento: ${url}`
   );
   const numeroLimpio = telefono.replace(/[^0-9]/g, "");
 
@@ -51,22 +56,24 @@ export function LinkCliente({
         >
           Enviar por WhatsApp
         </a>
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => {
-            if (
-              !confirm(
-                "Esto invalida el link anterior del cliente. ¿Continuar?"
+        {mostrarRegenerar && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => {
+              if (
+                !confirm(
+                  "Esto invalida el link anterior del cliente (y el de su forma DS-160, comparten el mismo link). ¿Continuar?"
+                )
               )
-            )
-              return;
-            startTransition(() => regenerarTokenAction(casoId));
-          }}
-          className="font-mono text-xs text-ink/50 hover:text-red-700 disabled:opacity-60"
-        >
-          Regenerar link
-        </button>
+                return;
+              startTransition(() => regenerarTokenAction(casoId));
+            }}
+            className="font-mono text-xs text-ink/50 hover:text-red-700 disabled:opacity-60"
+          >
+            Regenerar link
+          </button>
+        )}
       </div>
     </div>
   );
