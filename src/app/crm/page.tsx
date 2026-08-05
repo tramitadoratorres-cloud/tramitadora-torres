@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { KanbanBoard } from "./kanban-board";
+import { DS160PendientesSection } from "./ds160-pendientes-section";
 
 export default async function CrmPage() {
   const casos = await db.caso.findMany({
@@ -29,6 +30,7 @@ export default async function CrmPage() {
           ).
         </p>
       </div>
+      <DS160PendientesSection />
       <KanbanBoard casos={casos} />
     </div>
   );
