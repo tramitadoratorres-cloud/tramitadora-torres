@@ -2,13 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import {
+  DATOS_PAGO_MANUAL,
   ETAPAS,
   ETAPA_CLIENTE_LABEL,
+  formatEnGrupos,
   formatFolio,
   formatMXN,
   WHATSAPP_NUMERO,
   type Etapa,
 } from "@/lib/constants";
+import { CopyButton } from "./copy-button";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +41,7 @@ export default async function MiTramitePage({
 
   const etapaActualIndex = ETAPAS.indexOf(caso.etapa as Etapa);
   const q = `?token=${token}`;
+  const precio = caso.precioCobrado ?? caso.tramiteCatalogo?.honorarioBase ?? null;
 
   const hermanos = await db.caso.findMany({
     where: { expedienteId: caso.expedienteId, id: { not: caso.id } },
@@ -117,6 +121,59 @@ export default async function MiTramitePage({
             </div>
           )}
         </div>
+
+        <section className="mt-8">
+          <h2 className="mb-3 font-mono text-xs uppercase tracking-widest text-gold-bright">
+            Cómo pagar
+          </h2>
+          <div className="flex flex-col gap-3">
+            {caso.tramiteCatalogo?.linkPago && (
+              <div className="rounded-lg bg-paper p-4 text-ink shadow">
+                <p className="font-serif font-semibold">Pago en línea</p>
+                <p className="mt-1 text-sm text-ink/60">
+                  Con tarjeta o en efectivo en cualquier OXXO, procesado de
+                  forma segura por Stripe.
+                </p>
+                <a
+                  href={caso.tramiteCatalogo.linkPago}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block rounded bg-gold px-4 py-2 font-mono text-sm font-semibold text-navy-900 hover:bg-gold-bright"
+                >
+                  Pagar
+                  {precio != null ? ` ${formatMXN(precio)}` : ""} en línea
+                </a>
+              </div>
+            )}
+
+            <div className="rounded-lg bg-paper p-4 text-ink shadow">
+              <p className="font-serif font-semibold">
+                Transferencia o depósito en OXXO
+              </p>
+              <p className="mt-1 text-sm text-ink/60">
+                También puedes transferir por SPEI o depositar en efectivo en
+                cualquier tienda OXXO a esta cuenta. Envíanos tu comprobante
+                por WhatsApp para confirmar tu pago.
+              </p>
+              <dl className="mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 font-mono text-sm">
+                <dt className="text-ink/45">Banco</dt>
+                <dd>{DATOS_PAGO_MANUAL.banco}</dd>
+                <dt className="text-ink/45">Titular</dt>
+                <dd>{DATOS_PAGO_MANUAL.titular}</dd>
+                <dt className="text-ink/45">Tarjeta</dt>
+                <dd className="flex flex-wrap items-center gap-2">
+                  {formatEnGrupos(DATOS_PAGO_MANUAL.tarjeta)}
+                  <CopyButton value={DATOS_PAGO_MANUAL.tarjeta} />
+                </dd>
+                <dt className="text-ink/45">CLABE</dt>
+                <dd className="flex flex-wrap items-center gap-2">
+                  {formatEnGrupos(DATOS_PAGO_MANUAL.clabe)}
+                  <CopyButton value={DATOS_PAGO_MANUAL.clabe} />
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </section>
 
         {caso.citas.length > 0 && (
           <section className="mt-8">

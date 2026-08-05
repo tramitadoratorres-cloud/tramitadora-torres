@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAgent } from "@/lib/session";
 import { logoutAction } from "@/app/login/actions";
+import { archivarEntregadosVencidos } from "@/lib/archivado";
 
 export default async function CrmLayout({
   children,
@@ -8,6 +9,7 @@ export default async function CrmLayout({
   children: React.ReactNode;
 }) {
   const session = await requireAgent();
+  await archivarEntregadosVencidos();
 
   return (
     <div className="min-h-screen bg-paper-dim text-ink">
@@ -32,6 +34,12 @@ export default async function CrmLayout({
                 className="transition hover:text-gold-bright"
               >
                 Catálogo
+              </Link>
+              <Link
+                href="/crm/buscar"
+                className="transition hover:text-gold-bright"
+              >
+                Buscar
               </Link>
             </nav>
           </div>

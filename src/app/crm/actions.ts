@@ -18,7 +18,12 @@ export async function moverEtapaAction(casoId: string, nuevaEtapa: Etapa) {
 
   await db.caso.update({
     where: { id: casoId },
-    data: { etapa: nuevaEtapa },
+    data: {
+      etapa: nuevaEtapa,
+      // Arranca (o reinicia) el reloj de las 48 h para el autoarchivo;
+      // se limpia si el caso se mueve fuera de ENTREGADO por error.
+      entregadoEn: nuevaEtapa === "ENTREGADO" ? new Date() : null,
+    },
   });
 
   await logActividad({
@@ -30,4 +35,53 @@ export async function moverEtapaAction(casoId: string, nuevaEtapa: Etapa) {
 
   revalidatePath("/crm");
   revalidatePath(`/crm/clientes/${casoId}`);
+}
+
+/** Saca el caso del tablero sin borrarlo: se conserva y sigue siendo
+ * localizable desde /crm/buscar. */
+export async function archivarCasoAction(casoId: string) {
+  const session = await requireAgent();
+
+  await db.caso.update({
+    where: { id: casoId },
+    data: { archivadoEn: new Date() },
+  });
+
+  await logActividad({
+    casoId,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.ARCHIVADO,
+    descripcion: `${session.nombre} archivó el caso manualmente`,
+  });
+
+  revalidatePath("/crm");
+  revalidatePath(`/crm/clientes/${casoId}`);
+  revalidatePath("/crm/buscar");
+}
+
+export async function reactivarCasoAction(casoId: string) {
+  const session = await requireAgent();
+
+  const caso = await db.caso.findUniqueOrThrow({ where: { id: casoId } });
+
+  await db.caso.update({
+    where: { id: casoId },
+    data: {
+      archivadoEn: null,
+      // Si sigue en ENTREGADO, reinicia el reloj de las 48 h en vez de
+      // dejarlo sin fecha (nunca se volvería a archivar solo).
+      entregadoEn: caso.etapa === "ENTREGADO" ? new Date() : null,
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.REACTIVADO,
+    descripcion: `${session.nombre} regresó el caso al tablero`,
+  });
+
+  revalidatePath("/crm");
+  revalidatePath(`/crm/clientes/${casoId}`);
+  revalidatePath("/crm/buscar");
 }

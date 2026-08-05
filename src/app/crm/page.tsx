@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { KanbanBoard } from "./kanban-board";
 
 export default async function CrmPage() {
   const casos = await db.caso.findMany({
+    where: { archivadoEn: null },
     include: {
       cliente: true,
       tramiteCatalogo: true,
@@ -19,7 +21,12 @@ export default async function CrmPage() {
         </h1>
         <p className="mt-1 text-sm text-ink/60">
           Arrastra una tarjeta para cambiar de etapa. Los cambios quedan
-          registrados en la bitácora del cliente.
+          registrados en la bitácora del cliente. Los casos entregados se
+          archivan solos a las 48 h (siguen en la base de datos, búscalos en{" "}
+          <Link href="/crm/buscar" className="underline hover:text-navy-700">
+            Buscar
+          </Link>
+          ).
         </p>
       </div>
       <KanbanBoard casos={casos} />

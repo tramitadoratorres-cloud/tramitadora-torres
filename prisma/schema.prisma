@@ -94,6 +94,13 @@ model Caso {
   // Token del link privado del "ticket virtual" del cliente (/mi-tramite/<token>).
   // Separado del id interno para poder regenerarlo si se filtra el link.
   tokenPublico        String           @unique @default(cuid())
+  // Fecha en la que el caso llegó a la etapa ENTREGADO. Se usa para
+  // archivarlo automáticamente 48 h después (ver src/lib/archivado.ts).
+  // Se limpia si el caso se mueve de vuelta a otra etapa.
+  entregadoEn         DateTime?
+  // Si no es null, el caso está archivado: ya no aparece en el tablero pero
+  // se conserva en la base de datos y se puede encontrar con el buscador.
+  archivadoEn         DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   actividades         ActividadLog[]
@@ -104,6 +111,7 @@ model Caso {
 
   @@index([etapa])
   @@index([expedienteId])
+  @@index([archivadoEn])
 }
 
 // Respuestas del cuestionario DS-160 que el cliente llena por su cuenta.

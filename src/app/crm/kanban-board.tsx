@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import type { db } from "@/lib/db";
 import { ETAPAS, ETAPA_LABEL, formatMXN, type Etapa } from "@/lib/constants";
-import { moverEtapaAction } from "./actions";
+import { archivarCasoAction, moverEtapaAction } from "./actions";
 
 type CasoConRelaciones = Awaited<ReturnType<typeof db.caso.findMany<{
   include: {
@@ -15,12 +15,22 @@ type CasoConRelaciones = Awaited<ReturnType<typeof db.caso.findMany<{
   };
 }>>>[number];
 
+type OptimisticAction =
+  | { type: "mover"; casoId: string; etapa: Etapa }
+  | { type: "archivar"; casoId: string };
+
 export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
   const [isPending, startTransition] = useTransition();
   const [optimisticCasos, setOptimisticCasos] = useOptimistic(
     casos,
-    (state, { casoId, etapa }: { casoId: string; etapa: Etapa }) =>
-      state.map((c) => (c.id === casoId ? { ...c, etapa } : c))
+    (state, action: OptimisticAction) => {
+      if (action.type === "mover") {
+        return state.map((c) =>
+          c.id === action.casoId ? { ...c, etapa: action.etapa } : c
+        );
+      }
+      return state.filter((c) => c.id !== action.casoId);
+    }
   );
 
   function handleDragEnd(result: DropResult) {
@@ -29,8 +39,22 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
     const nuevaEtapa = destination.droppableId as Etapa;
 
     startTransition(() => {
-      setOptimisticCasos({ casoId: draggableId, etapa: nuevaEtapa });
+      setOptimisticCasos({ type: "mover", casoId: draggableId, etapa: nuevaEtapa });
       moverEtapaAction(draggableId, nuevaEtapa);
+    });
+  }
+
+  function handleArchivar(casoId: string, nombre: string) {
+    if (
+      !confirm(
+        `¿Sacar del tablero el caso de ${nombre}? Se conserva en la base de datos y lo puedes encontrar después en Buscar.`
+      )
+    )
+      return;
+
+    startTransition(() => {
+      setOptimisticCasos({ type: "archivar", casoId });
+      archivarCasoAction(casoId);
     });
   }
 
@@ -65,44 +89,62 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
                         index={index}
                       >
                         {(provided, snapshot) => (
-                          <Link
-                            href={`/crm/clientes/${caso.id}`}
+                          <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`block rounded border border-ink/10 bg-white p-3 shadow-sm transition hover:shadow-md ${
+                            className={`group relative rounded border border-ink/10 bg-white shadow-sm transition hover:shadow-md ${
                               snapshot.isDragging ? "opacity-90 shadow-lg" : ""
                             } ${isPending ? "opacity-80" : ""}`}
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-sans text-sm font-semibold text-ink">
-                                {caso.paraQuien || caso.cliente.nombre}
+                            <Link
+                              href={`/crm/clientes/${caso.id}`}
+                              className="block p-3 pr-7"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-sans text-sm font-semibold text-ink">
+                                  {caso.paraQuien || caso.cliente.nombre}
+                                </p>
+                                {caso.expediente._count.casos > 1 && (
+                                  <span
+                                    title="Este contacto tiene más trámites en su expediente"
+                                    className="shrink-0 rounded-full bg-navy-900/10 px-1.5 py-0.5 font-mono text-[10px] text-navy-800"
+                                  >
+                                    👪 {caso.expediente._count.casos}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 text-xs text-ink/60">
+                                {caso.tramiteCatalogo?.nombre ?? "Sin trámite asignado"}
                               </p>
-                              {caso.expediente._count.casos > 1 && (
-                                <span
-                                  title="Este contacto tiene más trámites en su expediente"
-                                  className="shrink-0 rounded-full bg-navy-900/10 px-1.5 py-0.5 font-mono text-[10px] text-navy-800"
-                                >
-                                  👪 {caso.expediente._count.casos}
+                              <div className="mt-2 flex items-center justify-between">
+                                <span className="font-mono text-xs text-navy-700">
+                                  {caso.precioCobrado != null
+                                    ? formatMXN(caso.precioCobrado)
+                                    : "—"}
                                 </span>
-                              )}
-                            </div>
-                            <p className="mt-0.5 text-xs text-ink/60">
-                              {caso.tramiteCatalogo?.nombre ?? "Sin trámite asignado"}
-                            </p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <span className="font-mono text-xs text-navy-700">
-                                {caso.precioCobrado != null
-                                  ? formatMXN(caso.precioCobrado)
-                                  : "—"}
-                              </span>
-                              {caso.pagado && (
-                                <span className="rounded-full bg-gold/20 px-2 py-0.5 font-mono text-[10px] text-navy-800">
-                                  Pagado
-                                </span>
-                              )}
-                            </div>
-                          </Link>
+                                {caso.pagado && (
+                                  <span className="rounded-full bg-gold/20 px-2 py-0.5 font-mono text-[10px] text-navy-800">
+                                    Pagado
+                                  </span>
+                                )}
+                              </div>
+                            </Link>
+                            <button
+                              type="button"
+                              title="Sacar del tablero (se conserva y se puede buscar después)"
+                              aria-label="Sacar del tablero"
+                              onClick={() =>
+                                handleArchivar(
+                                  caso.id,
+                                  caso.paraQuien || caso.cliente.nombre
+                                )
+                              }
+                              className="absolute right-1.5 top-1.5 rounded px-1 font-mono text-xs text-ink/40 transition hover:bg-red-50 hover:text-red-600"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         )}
                       </Draggable>
                     ))}

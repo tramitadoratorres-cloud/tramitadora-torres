@@ -23,7 +23,7 @@ export function LinkCliente({
 
   const mensajeWhatsapp = encodeURIComponent(
     mensaje ??
-      `Hola ${clienteNombre}, aquí puedes ver el estatus de tu trámite en cualquier momento: ${url}`
+      `Hola ${clienteNombre}, gracias por confiar en Tramitadora Torres.\n\nAquí tienes tu ticket digital: puedes revisar en cualquier momento el estatus de tu trámite, tus documentos, tus recibos y tus opciones de pago (en línea, transferencia o depósito en OXXO).\n\n${url}\n\nCualquier duda, estamos para ayudarte.`
   );
   const numeroLimpio = telefono.replace(/[^0-9]/g, "");
 

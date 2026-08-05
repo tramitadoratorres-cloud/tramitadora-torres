@@ -12,6 +12,7 @@ import { ArchivosSection } from "./archivo-form";
 import { LinkCliente } from "./link-cliente";
 import { DS160Lista } from "./ds160-lista";
 import { ExpedienteSection } from "./expediente-section";
+import { ReactivarButton } from "../../buscar/reactivar-button";
 
 export default async function ClienteCasoPage({
   params,
@@ -57,6 +58,17 @@ export default async function ClienteCasoPage({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 flex flex-col gap-6">
+        {caso.archivadoEn && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-navy-900/15 bg-navy-900/5 p-4">
+            <p className="text-sm text-ink/70">
+              Este caso está{" "}
+              <span className="font-semibold text-navy-800">archivado</span>{" "}
+              y no aparece en el tablero.
+            </p>
+            <ReactivarButton casoId={caso.id} />
+          </div>
+        )}
+
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
