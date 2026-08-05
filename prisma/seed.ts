@@ -85,7 +85,7 @@ const TRAMITES = [
     icono: "paquete",
     destacado: true,
     requisitos: [
-      "Todo lo del pasaporte nuevo o renovación (incluye tu cita de pasaporte)",
+      "Cita de pasaporte (para tu pasaporte nuevo o renovación)",
       "Cita en el CAS para la visa (toma de datos biométricos)",
       "Cita en el Consulado Americano para la visa (si tu caso la requiere; en algunas renovaciones solo se necesita la cita en el CAS)",
     ].join("\n"),
