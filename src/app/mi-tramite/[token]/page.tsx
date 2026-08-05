@@ -85,7 +85,7 @@ export default async function MiTramitePage({
             </p>
           </div>
 
-          <ol className="mt-6 grid grid-cols-3 gap-y-4 sm:grid-cols-6">
+          <ol className="mt-6 grid grid-cols-4 gap-y-4 sm:grid-cols-7">
             {ETAPAS.map((etapa, i) => {
               const alcanzada = i <= etapaActualIndex;
               return (

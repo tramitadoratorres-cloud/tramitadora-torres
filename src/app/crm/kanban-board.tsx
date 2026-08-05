@@ -76,7 +76,7 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
   return (
     <>
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-7">
         {ETAPAS.map((etapa) => {
           const casosEtapa = optimisticCasos.filter((c) => c.etapa === etapa);
           return (
