@@ -48,6 +48,12 @@ export default async function CrmLayout({
                 Buscar
               </Link>
               <Link
+                href="/crm/reportes"
+                className="transition hover:text-gold-bright"
+              >
+                Reportes
+              </Link>
+              <Link
                 href="/crm/errores"
                 className="transition hover:text-gold-bright"
               >

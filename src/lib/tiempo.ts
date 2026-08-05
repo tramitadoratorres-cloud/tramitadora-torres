@@ -51,3 +51,45 @@ export function toDatetimeLocalValue(fecha: Date): string {
     partes.find((p) => p.type === tipo)?.value ?? "";
   return `${obtener("year")}-${obtener("month")}-${obtener("day")}T${obtener("hour")}:${obtener("minute")}`;
 }
+
+/** La fecha de hoy en Tijuana, como "YYYY-MM-DD". */
+export function hoyTijuana(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: ZONA_HORARIA,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/**
+ * Suma (o resta) días a una fecha "YYYY-MM-DD" con aritmética de calendario
+ * pura (no le importa la zona horaria del servidor: solo mueve el número
+ * de día).
+ */
+export function sumarDiasISO(fechaISO: string, dias: number): string {
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  const fecha = new Date(Date.UTC(y, m - 1, d));
+  fecha.setUTCDate(fecha.getUTCDate() + dias);
+  return fecha.toISOString().slice(0, 10);
+}
+
+/** 0 = domingo … 6 = sábado, para una fecha "YYYY-MM-DD" (aritmética de calendario pura). */
+function diaSemanaISO(fechaISO: string): number {
+  const [y, m, d] = fechaISO.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+/** El lunes de la semana en curso (hora de Tijuana), como "YYYY-MM-DD". */
+export function inicioSemanaTijuana(): string {
+  const hoy = hoyTijuana();
+  const dow = diaSemanaISO(hoy);
+  const diasDesdeLunes = dow === 0 ? 6 : dow - 1;
+  return sumarDiasISO(hoy, -diasDesdeLunes);
+}
+
+/** El primer día del mes en curso (hora de Tijuana), como "YYYY-MM-DD". */
+export function inicioMesTijuana(): string {
+  const hoy = hoyTijuana();
+  return `${hoy.slice(0, 7)}-01`;
+}
