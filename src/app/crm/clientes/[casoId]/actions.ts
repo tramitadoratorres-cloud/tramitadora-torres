@@ -6,11 +6,20 @@ import { db } from "@/lib/db";
 import { requireAgent } from "@/lib/session";
 import { logActividad } from "@/lib/actividad";
 import { ACTIVIDAD_TIPO, formatMXN } from "@/lib/constants";
-import { avanzarEtapaSiAplica, generarReciboSiFalta } from "@/lib/recibo-helper";
+import {
+  avanzarEtapaSiAplica,
+  generarReciboSiFalta,
+  crearReciboAdicional,
+} from "@/lib/recibo-helper";
 
 export interface FormState {
   error?: string;
   ok?: boolean;
+}
+
+export interface CobroAdicionalState {
+  error?: string;
+  reciboId?: string;
 }
 
 const asignarSchema = z.object({
@@ -204,4 +213,37 @@ export async function generarReciboAction(casoId: string) {
   const recibo = await generarReciboSiFalta(casoId, session.userId);
   revalidatePath(`/crm/clientes/${casoId}`);
   return recibo!.id;
+}
+
+const cobroAdicionalSchema = z.object({
+  concepto: z.string().min(1, "Escribe el concepto del cobro"),
+  monto: z.coerce.number().int().min(1, "El monto debe ser mayor a 0"),
+});
+
+// Genera un recibo adicional para el caso, sin importar si ya tiene otros —
+// para cobros aparte del honorario base (ej. una comisión, un cargo extra).
+export async function generarReciboAdicionalAction(
+  casoId: string,
+  _prevState: CobroAdicionalState,
+  formData: FormData
+): Promise<CobroAdicionalState> {
+  const session = await requireAgent();
+  const parsed = cobroAdicionalSchema.safeParse({
+    concepto: formData.get("concepto"),
+    monto: formData.get("monto"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const recibo = await crearReciboAdicional(
+    casoId,
+    parsed.data.monto,
+    parsed.data.concepto,
+    session.userId
+  );
+
+  revalidatePath(`/crm/clientes/${casoId}`);
+  return { reciboId: recibo.id };
 }

@@ -1,7 +1,14 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { logActividad } from "@/lib/actividad";
-import { ACTIVIDAD_TIPO, ETAPA_LABEL, FOLIO_INICIAL, formatFolio, type Etapa } from "@/lib/constants";
+import {
+  ACTIVIDAD_TIPO,
+  ETAPA_LABEL,
+  FOLIO_INICIAL,
+  formatFolio,
+  formatMXN,
+  type Etapa,
+} from "@/lib/constants";
 
 // Cuando el pago o los documentos quedan listos, el caso avanza de etapa
 // automáticamente (basta con que UNA de las dos casillas se complete: el pago
@@ -61,6 +68,38 @@ export async function generarReciboSiFalta(
     descripcion: userId
       ? `Recibo folio ${formatFolio(recibo.folio)} generado`
       : `Recibo folio ${formatFolio(recibo.folio)} generado automáticamente (pago en línea)`,
+  });
+
+  return recibo;
+}
+
+// Genera SIEMPRE un recibo nuevo para el caso, sin importar si ya tiene uno.
+// Para cobros aparte del honorario base del trámite (ej. una comisión por
+// pagar la visa en línea a nombre del cliente) — el trámite puede terminar
+// con varios recibos, cada uno con su propio folio y concepto.
+export async function crearReciboAdicional(
+  casoId: string,
+  monto: number,
+  concepto: string,
+  userId: string | null
+) {
+  const ultimo = await db.recibo.aggregate({ _max: { folio: true } });
+  const folio = Math.max((ultimo._max.folio ?? 0) + 1, FOLIO_INICIAL);
+  const recibo = await db.recibo.create({
+    data: {
+      casoId,
+      folio,
+      monto,
+      motivoAjuste: concepto,
+      generadoPorId: userId,
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId,
+    tipo: ACTIVIDAD_TIPO.RECIBO_GENERADO,
+    descripcion: `Recibo adicional folio ${formatFolio(recibo.folio)} generado (${concepto}, ${formatMXN(monto)})`,
   });
 
   return recibo;

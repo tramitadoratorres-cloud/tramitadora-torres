@@ -8,6 +8,7 @@ import { TramiteForm } from "./tramite-form";
 import { NotaForm } from "./nota-form";
 import { EtapaSelector } from "./etapa-selector";
 import { GenerarReciboButton } from "./recibo-button";
+import { CobroAdicionalForm } from "./cobro-adicional-form";
 import { CitasSection } from "./cita-form";
 import { ArchivosSection } from "./archivo-form";
 import { LinkCliente } from "./link-cliente";
@@ -213,6 +214,8 @@ export default async function ClienteCasoPage({
               </p>
             )}
           </div>
+
+          <CobroAdicionalForm casoId={caso.id} />
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow-sm">
