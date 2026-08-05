@@ -71,6 +71,8 @@ const TRAMITES = [
       "Pasaporte mexicano vigente",
       "Comprobantes de arraigo: trabajo, estudios o propiedades",
       "Formulario DS-160 (te ayudamos a llenarlo)",
+      "Cita en el CAS (toma de datos biométricos)",
+      "Cita en el Consulado Americano (si tu caso la requiere; en algunas renovaciones solo se necesita la cita en el CAS)",
     ].join("\n"),
   },
   {
@@ -83,8 +85,9 @@ const TRAMITES = [
     icono: "paquete",
     destacado: true,
     requisitos: [
-      "Todo lo del pasaporte nuevo o renovación",
-      "Todo lo de la visa de turista",
+      "Todo lo del pasaporte nuevo o renovación (incluye tu cita de pasaporte)",
+      "Cita en el CAS para la visa (toma de datos biométricos)",
+      "Cita en el Consulado Americano para la visa (si tu caso la requiere; en algunas renovaciones solo se necesita la cita en el CAS)",
     ].join("\n"),
   },
   {
