@@ -62,6 +62,49 @@ export async function crearCitaAction(
   return { ok: true };
 }
 
+export async function actualizarCitaAction(
+  citaId: string,
+  casoId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireAgent();
+  const parsed = citaSchema.safeParse({
+    fecha: formData.get("fecha"),
+    lugar: formData.get("lugar"),
+    nota: formData.get("nota"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const fecha = new Date(parsed.data.fecha);
+  if (Number.isNaN(fecha.getTime())) {
+    return { error: "La fecha no es válida" };
+  }
+
+  await db.cita.update({
+    where: { id: citaId },
+    data: {
+      fecha,
+      lugar: parsed.data.lugar || "",
+      nota: parsed.data.nota || "",
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.NOTA,
+    descripcion: `${session.nombre} cambió una cita: ahora es el ${new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short" }).format(fecha)}${parsed.data.lugar ? ` en ${parsed.data.lugar}` : ""}`,
+    visibleCliente: true,
+  });
+
+  revalidatePath(`/crm/clientes/${casoId}`);
+  return { ok: true };
+}
+
 export async function eliminarCitaAction(citaId: string, casoId: string) {
   await requireAgent();
   await db.cita.delete({ where: { id: citaId } });

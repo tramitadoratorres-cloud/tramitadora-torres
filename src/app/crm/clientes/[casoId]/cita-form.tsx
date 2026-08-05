@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import {
   crearCitaAction,
+  actualizarCitaAction,
   eliminarCitaAction,
   eliminarArchivoAction,
   subirArchivoCitaAction,
@@ -23,6 +24,13 @@ interface CitaItem {
   lugar: string;
   nota: string;
   archivos: ArchivoItem[];
+}
+
+function toDatetimeLocalValue(fecha: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(
+    fecha.getDate()
+  )}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
 }
 
 function CitaArchivos({
@@ -97,6 +105,100 @@ function CitaArchivos({
   );
 }
 
+function CitaRow({ casoId, cita }: { casoId: string; cita: CitaItem }) {
+  const [editando, setEditando] = useState(false);
+  const action = actualizarCitaAction.bind(null, cita.id, casoId);
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  if (editando) {
+    return (
+      <li className="rounded border border-ink/10 bg-ink/5 px-3 py-2 text-sm">
+        <form
+          action={async (formData) => {
+            await formAction(formData);
+            setEditando(false);
+          }}
+          className="flex flex-col gap-2"
+        >
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <input
+              type="datetime-local"
+              name="fecha"
+              required
+              defaultValue={toDatetimeLocalValue(cita.fecha)}
+              className="rounded border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+            />
+            <input
+              name="lugar"
+              defaultValue={cita.lugar}
+              placeholder="Lugar (opcional)"
+              className="rounded border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+            />
+          </div>
+          <input
+            name="nota"
+            defaultValue={cita.nota}
+            placeholder="Nota para el cliente (opcional)"
+            className="rounded border border-ink/15 bg-white px-2 py-1.5 text-sm text-ink"
+          />
+          {state.error && <p className="text-xs text-red-700">{state.error}</p>}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={pending}
+              className="rounded bg-navy-900 px-3 py-1.5 font-mono text-xs text-cream transition hover:bg-navy-700 disabled:opacity-60"
+            >
+              {pending ? "Guardando…" : "Guardar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditando(false)}
+              className="rounded border border-ink/15 px-3 py-1.5 font-mono text-xs transition hover:border-navy-700"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded border border-ink/10 bg-ink/5 px-3 py-2 text-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-ink">
+            {new Intl.DateTimeFormat("es-MX", {
+              dateStyle: "long",
+              timeStyle: "short",
+            }).format(cita.fecha)}
+          </p>
+          {cita.lugar && <p className="text-ink/60">{cita.lugar}</p>}
+          {cita.nota && <p className="text-ink/60">{cita.nota}</p>}
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setEditando(true)}
+            className="font-mono text-xs text-ink/40 hover:text-navy-700"
+          >
+            Editar
+          </button>
+          <form action={eliminarCitaAction.bind(null, cita.id, casoId)}>
+            <button
+              type="submit"
+              className="font-mono text-xs text-ink/40 hover:text-red-700"
+            >
+              Eliminar
+            </button>
+          </form>
+        </div>
+      </div>
+      <CitaArchivos casoId={casoId} citaId={cita.id} archivos={cita.archivos} />
+    </li>
+  );
+}
+
 export function CitasSection({
   casoId,
   citas,
@@ -113,36 +215,7 @@ export function CitasSection({
       {citas.length > 0 && (
         <ul className="flex flex-col gap-2">
           {citas.map((cita) => (
-            <li
-              key={cita.id}
-              className="rounded border border-ink/10 bg-ink/5 px-3 py-2 text-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-ink">
-                    {new Intl.DateTimeFormat("es-MX", {
-                      dateStyle: "long",
-                      timeStyle: "short",
-                    }).format(cita.fecha)}
-                  </p>
-                  {cita.lugar && <p className="text-ink/60">{cita.lugar}</p>}
-                  {cita.nota && <p className="text-ink/60">{cita.nota}</p>}
-                </div>
-                <form action={eliminarCitaAction.bind(null, cita.id, casoId)}>
-                  <button
-                    type="submit"
-                    className="font-mono text-xs text-ink/40 hover:text-red-700"
-                  >
-                    Eliminar
-                  </button>
-                </form>
-              </div>
-              <CitaArchivos
-                casoId={casoId}
-                citaId={cita.id}
-                archivos={cita.archivos}
-              />
-            </li>
+            <CitaRow key={cita.id} casoId={casoId} cita={cita} />
           ))}
         </ul>
       )}
