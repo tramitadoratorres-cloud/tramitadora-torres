@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { formatFechaHora } from "@/lib/tiempo";
 
 export default async function ErroresPage() {
   const errores = await db.errorLog.findMany({
@@ -26,10 +27,7 @@ export default async function ErroresPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-mono text-sm text-red-700">{error.mensaje}</p>
               <span className="shrink-0 font-mono text-[10px] text-ink/40">
-                {new Intl.DateTimeFormat("es-MX", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }).format(error.createdAt)}
+                {formatFechaHora(error.createdAt, { dateStyle: "medium", timeStyle: "short" })}
               </span>
             </div>
             {(error.ruta || error.metodo) && (

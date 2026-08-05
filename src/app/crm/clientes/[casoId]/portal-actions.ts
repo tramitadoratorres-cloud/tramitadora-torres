@@ -8,6 +8,7 @@ import { requireAgent } from "@/lib/session";
 import { logActividad } from "@/lib/actividad";
 import { guardarArchivo, borrarArchivo, archivoMaxBytes } from "@/lib/storage";
 import { ACTIVIDAD_TIPO } from "@/lib/constants";
+import { formatFechaHora, parseFechaHoraLocal } from "@/lib/tiempo";
 
 export interface FormState {
   error?: string;
@@ -36,7 +37,7 @@ export async function crearCitaAction(
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const fecha = new Date(parsed.data.fecha);
+  const fecha = parseFechaHoraLocal(parsed.data.fecha);
   if (Number.isNaN(fecha.getTime())) {
     return { error: "La fecha no es válida" };
   }
@@ -54,7 +55,7 @@ export async function crearCitaAction(
     casoId,
     userId: session.userId,
     tipo: ACTIVIDAD_TIPO.NOTA,
-    descripcion: `${session.nombre} agendó una cita para el ${new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short" }).format(fecha)}${parsed.data.lugar ? ` en ${parsed.data.lugar}` : ""}`,
+    descripcion: `${session.nombre} agendó una cita para el ${formatFechaHora(fecha, { dateStyle: "long", timeStyle: "short" })}${parsed.data.lugar ? ` en ${parsed.data.lugar}` : ""}`,
     visibleCliente: true,
   });
 
@@ -79,7 +80,7 @@ export async function actualizarCitaAction(
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const fecha = new Date(parsed.data.fecha);
+  const fecha = parseFechaHoraLocal(parsed.data.fecha);
   if (Number.isNaN(fecha.getTime())) {
     return { error: "La fecha no es válida" };
   }
@@ -97,7 +98,7 @@ export async function actualizarCitaAction(
     casoId,
     userId: session.userId,
     tipo: ACTIVIDAD_TIPO.NOTA,
-    descripcion: `${session.nombre} cambió una cita: ahora es el ${new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short" }).format(fecha)}${parsed.data.lugar ? ` en ${parsed.data.lugar}` : ""}`,
+    descripcion: `${session.nombre} cambió una cita: ahora es el ${formatFechaHora(fecha, { dateStyle: "long", timeStyle: "short" })}${parsed.data.lugar ? ` en ${parsed.data.lugar}` : ""}`,
     visibleCliente: true,
   });
 

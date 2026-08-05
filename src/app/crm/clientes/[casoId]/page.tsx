@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ACTIVIDAD_LABEL, formatFolio, formatMXN, type Etapa } from "@/lib/constants";
+import { formatFechaHora } from "@/lib/tiempo";
 import { marcarDocumentosAction, marcarPagoAction } from "./actions";
 import { TramiteForm } from "./tramite-form";
 import { NotaForm } from "./nota-form";
@@ -263,10 +264,7 @@ export default async function ClienteCasoPage({
               <li key={act.id} className="border-l-2 border-gold/40 pl-3">
                 <p className="font-mono text-[10px] uppercase tracking-wide text-ink/40">
                   {ACTIVIDAD_LABEL[act.tipo as keyof typeof ACTIVIDAD_LABEL] ?? act.tipo} ·{" "}
-                  {new Intl.DateTimeFormat("es-MX", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(act.createdAt)}
+                  {formatFechaHora(act.createdAt, { dateStyle: "medium", timeStyle: "short" })}
                 </p>
                 <p className="mt-0.5 text-sm text-ink/80">{act.descripcion}</p>
                 {act.usuario && (

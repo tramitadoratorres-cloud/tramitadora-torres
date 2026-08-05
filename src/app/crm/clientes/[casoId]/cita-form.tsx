@@ -9,6 +9,7 @@ import {
   subirArchivoCitaAction,
   type FormState,
 } from "./portal-actions";
+import { formatFechaHora, toDatetimeLocalValue } from "@/lib/tiempo";
 
 const initialState: FormState = {};
 
@@ -24,13 +25,6 @@ interface CitaItem {
   lugar: string;
   nota: string;
   archivos: ArchivoItem[];
-}
-
-function toDatetimeLocalValue(fecha: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(
-    fecha.getDate()
-  )}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
 }
 
 function CitaArchivos({
@@ -168,10 +162,7 @@ function CitaRow({ casoId, cita }: { casoId: string; cita: CitaItem }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium text-ink">
-            {new Intl.DateTimeFormat("es-MX", {
-              dateStyle: "long",
-              timeStyle: "short",
-            }).format(cita.fecha)}
+            {formatFechaHora(cita.fecha, { dateStyle: "long", timeStyle: "short" })}
           </p>
           {cita.lugar && <p className="text-ink/60">{cita.lugar}</p>}
           {cita.nota && <p className="text-ink/60">{cita.nota}</p>}

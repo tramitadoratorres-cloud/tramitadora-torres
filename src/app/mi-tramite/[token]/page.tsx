@@ -11,6 +11,7 @@ import {
   WHATSAPP_NUMERO,
   type Etapa,
 } from "@/lib/constants";
+import { formatFechaHora } from "@/lib/tiempo";
 import { CopyButton } from "./copy-button";
 
 export const dynamic = "force-dynamic";
@@ -187,10 +188,7 @@ export default async function MiTramitePage({
                   className="rounded-lg bg-paper p-4 text-ink shadow"
                 >
                   <p className="font-serif font-semibold">
-                    {new Intl.DateTimeFormat("es-MX", {
-                      dateStyle: "long",
-                      timeStyle: "short",
-                    }).format(cita.fecha)}
+                    {formatFechaHora(cita.fecha, { dateStyle: "long", timeStyle: "short" })}
                   </p>
                   {cita.lugar && (
                     <p className="text-sm text-ink/70">{cita.lugar}</p>
@@ -271,10 +269,7 @@ export default async function MiTramitePage({
               {caso.actividades.map((act) => (
                 <li key={act.id} className="border-l-2 border-gold/50 pl-3">
                   <p className="font-mono text-[10px] uppercase tracking-wide text-ink/40">
-                    {new Intl.DateTimeFormat("es-MX", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(act.createdAt)}
+                    {formatFechaHora(act.createdAt, { dateStyle: "medium", timeStyle: "short" })}
                   </p>
                   <p className="mt-0.5 text-sm text-ink/80">
                     {act.descripcion}

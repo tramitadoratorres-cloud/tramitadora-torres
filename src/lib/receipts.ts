@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { PDFDocument, rgb, StandardFonts, type PDFPage } from "pdf-lib";
 import { formatFolio, formatMXN } from "@/lib/constants";
+import { formatFechaHora } from "@/lib/tiempo";
 import { generarMatrizQR } from "@/lib/qr";
 
 const NAVY = rgb(0x0f / 255, 0x21 / 255, 0x38 / 255);
@@ -109,10 +110,7 @@ export async function generateReceiptPdf(data: ReceiptData): Promise<Uint8Array>
     cursorY -= 30;
   }
 
-  field(
-    "Fecha",
-    new Intl.DateTimeFormat("es-MX", { dateStyle: "long" }).format(data.fecha)
-  );
+  field("Fecha", formatFechaHora(data.fecha, { dateStyle: "long" }));
   field("Cliente", data.clienteNombre);
   field("Telefono", data.clienteTelefono);
   field("Tramite", data.tramiteNombre);

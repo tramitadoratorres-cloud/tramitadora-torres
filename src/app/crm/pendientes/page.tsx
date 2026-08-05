@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { WhatsAppButton } from "../whatsapp-button";
+import { formatFechaHora } from "@/lib/tiempo";
 
 export default async function PendientesPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -67,10 +68,10 @@ export default async function PendientesPage() {
               const caso = cita.caso;
               const nombre = caso.paraQuien || caso.cliente.nombre;
               const tramite = caso.tramiteCatalogo?.nombre ?? "tu trámite";
-              const fechaTexto = new Intl.DateTimeFormat("es-MX", {
+              const fechaTexto = formatFechaHora(cita.fecha, {
                 dateStyle: "long",
                 timeStyle: "short",
-              }).format(cita.fecha);
+              });
               const mensaje = `Hola ${nombre}, te recordamos tu cita para tu trámite de ${tramite} el ${fechaTexto}${
                 cita.lugar ? ` en ${cita.lugar}` : ""
               }. Cualquier duda, escríbenos.`;
