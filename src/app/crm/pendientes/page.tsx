@@ -2,14 +2,13 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { WhatsAppButton } from "../whatsapp-button";
 import { formatFechaHora } from "@/lib/tiempo";
-import { DS160PendientesSection } from "../ds160-pendientes-section";
 
 export default async function PendientesPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const ahora = new Date();
   const en48h = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
 
-  const [citas, documentosPendientes, ds160PendientesCount, pagosPendientes] =
+  const [citas, documentosPendientes, ds160Pendientes, pagosPendientes] =
     await Promise.all([
       db.cita.findMany({
         where: {
@@ -30,8 +29,12 @@ export default async function PendientesPage() {
         include: { cliente: true, tramiteCatalogo: true },
         orderBy: { updatedAt: "asc" },
       }),
-      db.formularioDS160.count({
+      db.formularioDS160.findMany({
         where: { enviado: false, caso: { archivadoEn: null } },
+        include: {
+          caso: { include: { cliente: true, tramiteCatalogo: true } },
+        },
+        orderBy: { createdAt: "asc" },
       }),
       db.caso.findMany({
         where: {
@@ -47,7 +50,7 @@ export default async function PendientesPage() {
   const sinPendientes =
     citas.length === 0 &&
     documentosPendientes.length === 0 &&
-    ds160PendientesCount === 0 &&
+    ds160Pendientes.length === 0 &&
     pagosPendientes.length === 0;
 
   return (
@@ -142,7 +145,43 @@ export default async function PendientesPage() {
         </section>
       )}
 
-      <DS160PendientesSection />
+      {ds160Pendientes.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 font-mono text-xs uppercase tracking-widest text-ink/50">
+            Pendientes de forma DS-160
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {ds160Pendientes.map((formulario) => {
+              const caso = formulario.caso;
+              const nombre = caso.paraQuien || caso.cliente.nombre;
+              const tramite = caso.tramiteCatalogo?.nombre ?? "tu trámite";
+              const dsUrl = `${siteUrl}/forma-ds160/${formulario.token}`;
+              const mensaje = `Hola ${nombre}, para seguir avanzando tu trámite de ${tramite} necesitamos que llenes tu forma DS-160. No es necesario terminarla de una vez, puedes guardar e ir completando: ${dsUrl}`;
+
+              return (
+                <li
+                  key={formulario.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white p-4 shadow-sm"
+                >
+                  <div>
+                    <Link
+                      href={`/crm/clientes/${caso.id}`}
+                      className="font-serif font-semibold text-ink hover:text-navy-700"
+                    >
+                      {nombre}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-ink/60">
+                      {tramite} · sin llenar desde{" "}
+                      {formatFechaHora(formulario.createdAt, { dateStyle: "medium" })}
+                    </p>
+                  </div>
+                  <WhatsAppButton telefono={caso.cliente.telefono} mensaje={mensaje} />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {pagosPendientes.length > 0 && (
         <section className="mb-8">
