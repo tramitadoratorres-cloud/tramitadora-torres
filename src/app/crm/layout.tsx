@@ -47,6 +47,12 @@ export default async function CrmLayout({
               >
                 Buscar
               </Link>
+              <Link
+                href="/crm/errores"
+                className="transition hover:text-gold-bright"
+              >
+                Errores
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">

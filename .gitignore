@@ -45,6 +45,11 @@ next-env.d.ts
 # sqlite database
 /dev.db
 /dev.db-journal
+/dev.db-wal
+/dev.db-shm
+
+# respaldos diarios automáticos (ver src/lib/backup.ts) — datos de clientes
+/backups
 
 # archivos subidos localmente para clientes (en producción viven en el volumen)
 /uploads

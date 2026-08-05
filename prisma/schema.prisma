@@ -191,3 +191,17 @@ model Recibo {
   generadoPor   User?    @relation(fields: [generadoPorId], references: [id])
   createdAt     DateTime @default(now())
 }
+
+// Errores del servidor capturados automáticamente (ver src/instrumentation.ts),
+// para poder revisarlos desde el CRM sin necesitar acceso al servidor.
+// Se conservan solo los últimos ~500 (ver src/lib/error-log.ts).
+model ErrorLog {
+  id        String   @id @default(cuid())
+  mensaje   String
+  stack     String?
+  ruta      String?
+  metodo    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
