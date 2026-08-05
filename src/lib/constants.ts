@@ -2,8 +2,8 @@ export const ETAPAS = [
   "NUEVO_CONTACTO",
   "COTIZADO",
   "DOCUMENTOS_PAGO",
-  "PENDIENTE_DS160",
   "EN_TRAMITE",
+  "PENDIENTE_DS160",
   "LISTO_ENTREGA",
   "ENTREGADO",
 ] as const;
