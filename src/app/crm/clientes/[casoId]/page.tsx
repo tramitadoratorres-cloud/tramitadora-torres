@@ -88,7 +88,14 @@ export default async function ClienteCasoPage({
                 </p>
               )}
             </div>
-            <EtapaSelector casoId={caso.id} etapaActual={caso.etapa as Etapa} />
+            <EtapaSelector
+              casoId={caso.id}
+              etapaActual={caso.etapa as Etapa}
+              telefono={caso.cliente.telefono}
+              nombre={caso.paraQuien || caso.cliente.nombre}
+              tramite={caso.tramiteCatalogo?.nombre ?? "tu trámite"}
+              ticketUrl={linkCliente}
+            />
           </div>
 
           {caso.mensaje && (

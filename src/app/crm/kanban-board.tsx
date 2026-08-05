@@ -1,11 +1,14 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import type { db } from "@/lib/db";
 import { ETAPAS, ETAPA_LABEL, formatMXN, type Etapa } from "@/lib/constants";
 import { archivarCasoAction, moverEtapaAction } from "./actions";
+import { AvisoEtapaToast, type AvisoEtapaInfo } from "./aviso-etapa";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 type CasoConRelaciones = Awaited<ReturnType<typeof db.caso.findMany<{
   include: {
@@ -21,6 +24,7 @@ type OptimisticAction =
 
 export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
   const [isPending, startTransition] = useTransition();
+  const [aviso, setAviso] = useState<AvisoEtapaInfo | null>(null);
   const [optimisticCasos, setOptimisticCasos] = useOptimistic(
     casos,
     (state, action: OptimisticAction) => {
@@ -38,9 +42,20 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
     if (!destination) return;
     const nuevaEtapa = destination.droppableId as Etapa;
 
+    const caso = optimisticCasos.find((c) => c.id === draggableId);
+    if (!caso || caso.etapa === nuevaEtapa) return;
+
     startTransition(() => {
       setOptimisticCasos({ type: "mover", casoId: draggableId, etapa: nuevaEtapa });
       moverEtapaAction(draggableId, nuevaEtapa);
+    });
+
+    setAviso({
+      telefono: caso.cliente.telefono,
+      nombre: caso.paraQuien || caso.cliente.nombre,
+      tramite: caso.tramiteCatalogo?.nombre ?? "tu trámite",
+      etapa: nuevaEtapa,
+      ticketUrl: `${SITE_URL}/mi-tramite/${caso.tokenPublico}`,
     });
   }
 
@@ -59,6 +74,7 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
   }
 
   return (
+    <>
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {ETAPAS.map((etapa) => {
@@ -157,5 +173,7 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
         })}
       </div>
     </DragDropContext>
+    {aviso && <AvisoEtapaToast aviso={aviso} onClose={() => setAviso(null)} />}
+    </>
   );
 }

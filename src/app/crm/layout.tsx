@@ -24,6 +24,12 @@ export default async function CrmLayout({
                 Tablero
               </Link>
               <Link
+                href="/crm/pendientes"
+                className="transition hover:text-gold-bright"
+              >
+                Pendientes
+              </Link>
+              <Link
                 href="/crm/clientes/nuevo"
                 className="transition hover:text-gold-bright"
               >
