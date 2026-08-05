@@ -152,22 +152,27 @@ model ActividadLog {
 
 // Cita agendada para el trámite (ej. SRE, embajada, CBP). Visible para el cliente.
 model Cita {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   casoId    String
-  caso      Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  caso      Caso      @relation(fields: [casoId], references: [id], onDelete: Cascade)
   fecha     DateTime
-  lugar     String   @default("")
-  nota      String   @default("")
-  createdAt DateTime @default(now())
+  lugar     String    @default("")
+  nota      String    @default("")
+  createdAt DateTime  @default(now())
+  archivos  Archivo[]
 
   @@index([casoId])
 }
 
 // Archivo subido por la gestoría para el cliente (formas, documentos, comprobantes).
+// Si citaId no es null, el archivo está asociado a esa cita en particular
+// (ej. la foto de la confirmación o el comprobante de esa cita específica).
 model Archivo {
   id            String   @id @default(cuid())
   casoId        String
   caso          Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  citaId        String?
+  cita          Cita?    @relation(fields: [citaId], references: [id], onDelete: Cascade)
   nombre        String
   rutaArchivo   String
   mimeType      String
@@ -177,6 +182,7 @@ model Archivo {
   createdAt     DateTime @default(now())
 
   @@index([casoId])
+  @@index([citaId])
 }
 
 // Recibo del honorario de gestoría cobrado (nunca incluye cuotas de gobierno).

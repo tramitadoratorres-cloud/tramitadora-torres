@@ -115,6 +115,55 @@ export async function subirArchivoAction(
   return { ok: true };
 }
 
+export async function subirArchivoCitaAction(
+  casoId: string,
+  citaId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireAgent();
+  const file = formData.get("archivo");
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Selecciona un archivo" };
+  }
+
+  let guardado;
+  try {
+    guardado = await guardarArchivo(casoId, file);
+  } catch (e) {
+    return {
+      error:
+        e instanceof Error
+          ? e.message
+          : `No se pudo guardar el archivo (máximo ${archivoMaxBytes() / 1024 / 1024} MB)`,
+    };
+  }
+
+  await db.archivo.create({
+    data: {
+      casoId,
+      citaId,
+      nombre: guardado.nombre,
+      rutaArchivo: guardado.rutaArchivo,
+      mimeType: guardado.mimeType,
+      tamano: guardado.tamano,
+      subidoPorId: session.userId,
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.NOTA,
+    descripcion: `${session.nombre} subió el archivo "${guardado.nombre}" a una cita`,
+    visibleCliente: true,
+  });
+
+  revalidatePath(`/crm/clientes/${casoId}`);
+  return { ok: true };
+}
+
 export async function eliminarArchivoAction(archivoId: string, casoId: string) {
   await requireAgent();
   const archivo = await db.archivo.findUniqueOrThrow({ where: { id: archivoId } });

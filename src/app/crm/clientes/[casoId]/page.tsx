@@ -27,8 +27,13 @@ export default async function ClienteCasoPage({
       cliente: true,
       tramiteCatalogo: true,
       recibos: { orderBy: { createdAt: "desc" } },
-      citas: { orderBy: { fecha: "asc" } },
-      archivos: { orderBy: { createdAt: "desc" } },
+      citas: {
+        orderBy: { fecha: "asc" },
+        include: { archivos: { orderBy: { createdAt: "desc" } } },
+      },
+      // Solo archivos sueltos, no asociados a una cita (esos se ven junto a
+      // su cita en la sección de Citas).
+      archivos: { where: { citaId: null }, orderBy: { createdAt: "desc" } },
       formularios: { orderBy: { createdAt: "asc" } },
       actividades: {
         orderBy: { createdAt: "desc" },
