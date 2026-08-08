@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ACTIVIDAD_LABEL, formatFolio, formatMXN, type Etapa } from "@/lib/constants";
+import { ACTIVIDAD_LABEL, ARCHIVO_CATEGORIA, formatFolio, formatMXN, type Etapa } from "@/lib/constants";
 import { formatFechaHora } from "@/lib/tiempo";
 import { marcarDocumentosAction, marcarPagoAction } from "./actions";
 import { TramiteForm } from "./tramite-form";
@@ -11,6 +11,7 @@ import { GenerarReciboButton } from "./recibo-button";
 import { CobroAdicionalForm } from "./cobro-adicional-form";
 import { CitasSection } from "./cita-form";
 import { ArchivosSection } from "./archivo-form";
+import { DerechosSection } from "./derechos-form";
 import { LinkCliente } from "./link-cliente";
 import { DS160Lista } from "./ds160-lista";
 import { ExpedienteSection } from "./expediente-section";
@@ -61,6 +62,13 @@ export default async function ClienteCasoPage({
   });
 
   const puedeGenerarRecibo = caso.pagado && caso.precioCobrado != null;
+
+  const archivosGenerales = caso.archivos.filter(
+    (a) => a.categoria !== ARCHIVO_CATEGORIA.DERECHOS_BANCO
+  );
+  const recibosDerechos = caso.archivos.filter(
+    (a) => a.categoria === ARCHIVO_CATEGORIA.DERECHOS_BANCO
+  );
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -229,7 +237,14 @@ export default async function ClienteCasoPage({
           <h2 className="mb-4 font-serif text-lg font-semibold text-ink">
             Archivos para el cliente
           </h2>
-          <ArchivosSection casoId={caso.id} archivos={caso.archivos} />
+          <ArchivosSection casoId={caso.id} archivos={archivosGenerales} />
+        </div>
+
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 font-serif text-lg font-semibold text-ink">
+            Recibos de pago de derechos (banco)
+          </h2>
+          <DerechosSection casoId={caso.id} archivos={recibosDerechos} />
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow-sm">

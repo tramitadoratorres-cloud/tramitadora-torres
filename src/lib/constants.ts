@@ -88,6 +88,14 @@ export const ACTIVIDAD_VISIBLE_CLIENTE_DEFAULT: Record<ActividadTipo, boolean> =
 // Horas que un caso permanece en ENTREGADO antes de archivarse solo.
 export const HORAS_AUTOARCHIVO = 48;
 
+export const ARCHIVO_CATEGORIA = {
+  GENERAL: "GENERAL",
+  DERECHOS_BANCO: "DERECHOS_BANCO",
+} as const;
+
+export type ArchivoCategoria =
+  (typeof ARCHIVO_CATEGORIA)[keyof typeof ARCHIVO_CATEGORIA];
+
 export function formatMXN(pesos: number): string {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",

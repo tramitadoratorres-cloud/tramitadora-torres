@@ -14,13 +14,14 @@ export function ClienteForm({ tramites }: { tramites: Tramite[] }) {
     initialState
   );
   const [tramiteId, setTramiteId] = useState("");
-  const [monto, setMonto] = useState("");
+  const [precio, setPrecio] = useState("");
+  const [yaPago, setYaPago] = useState(false);
 
   function handleTramiteChange(id: string) {
     setTramiteId(id);
     const tramite = tramites.find((t) => t.id === id);
-    if (tramite && !monto) {
-      setMonto(String(tramite.honorarioBase));
+    if (tramite && !precio) {
+      setPrecio(String(tramite.honorarioBase));
     }
   }
 
@@ -78,24 +79,35 @@ export function ClienteForm({ tramites }: { tramites: Tramite[] }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="font-mono text-xs uppercase tracking-wide text-ink/50">
-            Cuánto pagó (opcional, MXN)
+            Precio cotizado (opcional, MXN)
           </label>
           <input
             type="number"
-            name="montoPagado"
+            name="precioCobrado"
             min={0}
             step={1}
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-            placeholder="Déjalo vacío si aún no paga"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            placeholder="Honorario a cobrar"
             className="rounded border border-ink/15 bg-white px-3 py-2 text-sm text-ink"
           />
         </div>
       </div>
-      {monto && (
+
+      <label className="flex items-center gap-2 text-sm text-ink/70">
+        <input
+          type="checkbox"
+          name="yaPago"
+          checked={yaPago}
+          onChange={(e) => setYaPago(e.target.checked)}
+          className="h-4 w-4 rounded border-ink/30"
+        />
+        Ya pagó los honorarios
+      </label>
+      {yaPago && (
         <p className="-mt-2 text-xs text-ink/50">
-          Si ya pagó, el caso se marca como pagado y se genera el recibo
-          automáticamente.
+          Se marca el caso como pagado y se genera el recibo automáticamente
+          por {precio ? `$${precio} MXN` : "el precio cotizado"}.
         </p>
       )}
 

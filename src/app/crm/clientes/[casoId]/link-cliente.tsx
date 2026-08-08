@@ -19,12 +19,13 @@ export function LinkCliente({
   mostrarRegenerar?: boolean;
 }) {
   const [copiado, setCopiado] = useState(false);
+  const [mensajeCopiado, setMensajeCopiado] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const mensajeWhatsapp = encodeURIComponent(
+  const mensajeTexto =
     mensaje ??
-      `Hola ${clienteNombre}, gracias por confiar en Tramitadora Torres.\n\nAquí tienes tu ticket digital: puedes revisar en cualquier momento el estatus de tu trámite, tus documentos, tus recibos y tus opciones de pago (en línea, transferencia o depósito en OXXO).\n\n${url}\n\nCualquier duda, estamos para ayudarte.`
-  );
+    `Hola ${clienteNombre}, gracias por confiar en Tramitadora Torres.\n\nAquí tienes tu ticket digital: puedes revisar en cualquier momento el estatus de tu trámite, tus documentos, tus recibos y tus opciones de pago (en línea, transferencia o depósito en OXXO).\n\n${url}\n\nCualquier duda, estamos para ayudarte.`;
+  const mensajeWhatsapp = encodeURIComponent(mensajeTexto);
   const numeroLimpio = telefono.replace(/[^0-9]/g, "");
 
   return (
@@ -56,6 +57,17 @@ export function LinkCliente({
         >
           Enviar por WhatsApp
         </a>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(mensajeTexto);
+            setMensajeCopiado(true);
+            setTimeout(() => setMensajeCopiado(false), 2000);
+          }}
+          className="rounded border border-ink/15 px-3 py-2 font-mono text-xs text-ink/70 hover:border-navy-700 hover:text-navy-700"
+        >
+          {mensajeCopiado ? "¡Copiado!" : "Copiar mensaje con explicación"}
+        </button>
         {mostrarRegenerar && (
           <button
             type="button"

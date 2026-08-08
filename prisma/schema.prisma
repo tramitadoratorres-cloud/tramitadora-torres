@@ -173,6 +173,9 @@ model Archivo {
   caso          Caso     @relation(fields: [casoId], references: [id], onDelete: Cascade)
   citaId        String?
   cita          Cita?    @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  // "GENERAL" (por defecto) o "DERECHOS_BANCO" (comprobante de pago de
+  // derechos/cuotas de gobierno pagados en el banco). Ver src/lib/constants.ts.
+  categoria     String   @default("GENERAL")
   nombre        String
   rutaArchivo   String
   mimeType      String

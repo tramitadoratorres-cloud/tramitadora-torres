@@ -18,7 +18,7 @@ const schema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   mensaje: z.string().optional(),
   tramiteCatalogoId: z.string().optional(),
-  montoPagado: z.preprocess(
+  precioCobrado: z.preprocess(
     (val) => (val === "" || val == null ? undefined : val),
     z.coerce.number().int().min(0).optional()
   ),
@@ -35,18 +35,27 @@ export async function crearClienteAction(
     email: formData.get("email"),
     mensaje: formData.get("mensaje"),
     tramiteCatalogoId: formData.get("tramiteCatalogoId"),
-    montoPagado: formData.get("montoPagado"),
+    precioCobrado: formData.get("precioCobrado"),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
+  // Checkbox: solo llega en el FormData si está marcado ("on").
+  const yaPago = formData.get("yaPago") === "on";
+
   const tramite = parsed.data.tramiteCatalogoId
     ? await db.tramiteCatalogo.findUnique({ where: { id: parsed.data.tramiteCatalogoId } })
     : null;
 
-  const yaPago = parsed.data.montoPagado != null;
+  const precioCobrado = parsed.data.precioCobrado ?? tramite?.honorarioBase ?? null;
+
+  if (yaPago && precioCobrado == null) {
+    return {
+      error: "Para marcar el pago indica el trámite o el precio cotizado",
+    };
+  }
 
   const cliente = await db.cliente.create({
     data: {
@@ -67,7 +76,7 @@ export async function crearClienteAction(
       mensaje: parsed.data.mensaje || null,
       origen: ORIGEN.MANUAL,
       tramiteCatalogoId: tramite?.id ?? null,
-      precioCobrado: parsed.data.montoPagado ?? tramite?.honorarioBase ?? null,
+      precioCobrado,
       pagado: yaPago,
       fechaPago: yaPago ? new Date() : null,
       etapa: tramite ? "COTIZADO" : "NUEVO_CONTACTO",
@@ -97,7 +106,7 @@ export async function crearClienteAction(
       casoId: caso.id,
       userId: session.userId,
       tipo: ACTIVIDAD_TIPO.PAGO_RECIBIDO,
-      descripcion: `${session.nombre} registró un pago de ${formatMXN(parsed.data.montoPagado!)} al crear el cliente`,
+      descripcion: `${session.nombre} registró el pago de ${formatMXN(precioCobrado!)} al crear el cliente`,
     });
     await avanzarEtapaSiAplica(caso.id);
     await generarReciboSiFalta(caso.id, session.userId);
