@@ -201,12 +201,14 @@ export default async function HomePage() {
                       </details>
                     )}
                     <div className="flex flex-col gap-2">
-                      <a
-                        href={`/pagar/${tramite.id}`}
-                        className="block rounded bg-gold py-2.5 text-center font-mono text-sm font-semibold text-navy-900 transition hover:bg-gold-bright"
-                      >
-                        Pagar en línea
-                      </a>
+                      {tramite.linkPago && (
+                        <a
+                          href={`/pagar/${tramite.id}`}
+                          className="block rounded bg-gold py-2.5 text-center font-mono text-sm font-semibold text-navy-900 transition hover:bg-gold-bright"
+                        >
+                          Pagar en línea
+                        </a>
+                      )}
                       <a
                         href={wa(`Hola, quiero información de ${tramite.nombre}`)}
                         target="_blank"
