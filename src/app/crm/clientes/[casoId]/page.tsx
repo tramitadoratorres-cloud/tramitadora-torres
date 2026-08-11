@@ -16,6 +16,7 @@ import { LinkCliente } from "./link-cliente";
 import { DS160Lista } from "./ds160-lista";
 import { ExpedienteSection } from "./expediente-section";
 import { ReactivarButton } from "../../buscar/reactivar-button";
+import { casoPrincipalDeExpediente } from "@/lib/expediente";
 
 export default async function ClienteCasoPage({
   params,
@@ -48,7 +49,9 @@ export default async function ClienteCasoPage({
   if (!caso) notFound();
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const linkCliente = `${siteUrl}/mi-tramite/${caso.tokenPublico}`;
+  // Todo el expediente comparte un solo ticket: el del caso más antiguo.
+  const casoPrincipal = await casoPrincipalDeExpediente(caso.expedienteId);
+  const linkCliente = `${siteUrl}/mi-tramite/${casoPrincipal.tokenPublico}`;
 
   const tramites = await db.tramiteCatalogo.findMany({
     where: { activo: true },
@@ -125,11 +128,17 @@ export default async function ClienteCasoPage({
               Ticket virtual del cliente
             </p>
             <LinkCliente
-              casoId={caso.id}
+              casoId={casoPrincipal.id}
               url={linkCliente}
               clienteNombre={caso.cliente.nombre}
               telefono={caso.cliente.telefono}
             />
+            {caso.id !== casoPrincipal.id && (
+              <p className="mt-2 text-xs text-ink/40">
+                Este trámite comparte el ticket del expediente — no genera
+                uno propio.
+              </p>
+            )}
           </div>
         </div>
 

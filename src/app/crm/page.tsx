@@ -8,7 +8,18 @@ export default async function CrmPage() {
     include: {
       cliente: true,
       tramiteCatalogo: true,
-      expediente: { include: { _count: { select: { casos: true } } } },
+      expediente: {
+        include: {
+          _count: { select: { casos: true } },
+          // El caso más antiguo del expediente es el dueño del ticket
+          // compartido (ver src/lib/expediente.ts).
+          casos: {
+            orderBy: { createdAt: "asc" },
+            take: 1,
+            select: { tokenPublico: true },
+          },
+        },
+      },
     },
     orderBy: { updatedAt: "desc" },
   });

@@ -3,6 +3,25 @@ import { db } from "@/lib/db";
 import { WhatsAppButton } from "../whatsapp-button";
 import { formatFechaHora } from "@/lib/tiempo";
 
+// El caso más antiguo del expediente es dueño del ticket compartido (ver
+// src/lib/expediente.ts) — se trae junto con el caso para no hacer una
+// consulta aparte por cada uno.
+const INCLUDE_TICKET = {
+  expediente: {
+    include: {
+      casos: {
+        orderBy: { createdAt: "asc" as const },
+        take: 1,
+        select: { tokenPublico: true },
+      },
+    },
+  },
+};
+
+function tokenTicket(caso: { tokenPublico: string; expediente: { casos: { tokenPublico: string }[] } }) {
+  return caso.expediente.casos[0]?.tokenPublico ?? caso.tokenPublico;
+}
+
 export default async function PendientesPage() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const ahora = new Date();
@@ -26,7 +45,7 @@ export default async function PendientesPage() {
           etapa: "DOCUMENTOS_PAGO",
           documentosRecibidos: false,
         },
-        include: { cliente: true, tramiteCatalogo: true },
+        include: { cliente: true, tramiteCatalogo: true, ...INCLUDE_TICKET },
         orderBy: { updatedAt: "asc" },
       }),
       db.formularioDS160.findMany({
@@ -42,7 +61,7 @@ export default async function PendientesPage() {
           etapa: "DOCUMENTOS_PAGO",
           pagado: false,
         },
-        include: { cliente: true, tramiteCatalogo: true },
+        include: { cliente: true, tramiteCatalogo: true, ...INCLUDE_TICKET },
         orderBy: { updatedAt: "asc" },
       }),
     ]);
@@ -120,7 +139,7 @@ export default async function PendientesPage() {
             {documentosPendientes.map((caso) => {
               const nombre = caso.paraQuien || caso.cliente.nombre;
               const tramite = caso.tramiteCatalogo?.nombre ?? "tu trámite";
-              const ticketUrl = `${siteUrl}/mi-tramite/${caso.tokenPublico}`;
+              const ticketUrl = `${siteUrl}/mi-tramite/${tokenTicket(caso)}`;
               const mensaje = `Hola ${nombre}, seguimos esperando tus documentos para continuar con tu trámite de ${tramite}. En cuanto los tengamos, avanzamos. Aquí puedes ver el detalle: ${ticketUrl}`;
 
               return (
@@ -192,7 +211,7 @@ export default async function PendientesPage() {
             {pagosPendientes.map((caso) => {
               const nombre = caso.paraQuien || caso.cliente.nombre;
               const tramite = caso.tramiteCatalogo?.nombre ?? "tu trámite";
-              const ticketUrl = `${siteUrl}/mi-tramite/${caso.tokenPublico}`;
+              const ticketUrl = `${siteUrl}/mi-tramite/${tokenTicket(caso)}`;
               const mensaje = `Hola ${nombre}, tu trámite de ${tramite} está listo para continuar en cuanto confirmemos tu pago. Aquí puedes ver tus opciones de pago: ${ticketUrl}`;
 
               return (

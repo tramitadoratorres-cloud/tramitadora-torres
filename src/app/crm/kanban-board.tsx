@@ -14,7 +14,12 @@ type CasoConRelaciones = Awaited<ReturnType<typeof db.caso.findMany<{
   include: {
     cliente: true;
     tramiteCatalogo: true;
-    expediente: { include: { _count: { select: { casos: true } } } };
+    expediente: {
+      include: {
+        _count: { select: { casos: true } };
+        casos: { select: { tokenPublico: true } };
+      };
+    };
   };
 }>>>[number];
 
@@ -50,12 +55,13 @@ export function KanbanBoard({ casos }: { casos: CasoConRelaciones[] }) {
       moverEtapaAction(draggableId, nuevaEtapa);
     });
 
+    const tokenTicket = caso.expediente.casos[0]?.tokenPublico ?? caso.tokenPublico;
     setAviso({
       telefono: caso.cliente.telefono,
       nombre: caso.paraQuien || caso.cliente.nombre,
       tramite: caso.tramiteCatalogo?.nombre ?? "tu trámite",
       etapa: nuevaEtapa,
-      ticketUrl: `${SITE_URL}/mi-tramite/${caso.tokenPublico}`,
+      ticketUrl: `${SITE_URL}/mi-tramite/${tokenTicket}`,
     });
   }
 
