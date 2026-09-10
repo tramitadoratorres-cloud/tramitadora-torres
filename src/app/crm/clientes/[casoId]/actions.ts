@@ -120,6 +120,55 @@ export async function asignarTramiteAction(
   return { ok: true };
 }
 
+export interface CrearTramiteRapidoState {
+  error?: string;
+  tramite?: { id: string; nombre: string; honorarioBase: number };
+}
+
+const tramiteRapidoSchema = z.object({
+  nombre: z.string().min(1, "El nombre es obligatorio"),
+  honorarioBase: z.coerce.number().int().min(0, "El precio no puede ser negativo"),
+});
+
+// Crea un trámite en el catálogo sin salir del caso — para cuando el
+// trámite que necesitas todavía no existe ahí. Aparece también en
+// CRM → Catálogo y en el sitio público, igual que si se hubiera creado
+// desde ahí.
+export async function crearTramiteRapidoAction(
+  _prevState: CrearTramiteRapidoState,
+  formData: FormData
+): Promise<CrearTramiteRapidoState> {
+  await requireAgent();
+  const parsed = tramiteRapidoSchema.safeParse({
+    nombre: formData.get("nombre"),
+    honorarioBase: formData.get("honorarioBase"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const total = await db.tramiteCatalogo.count();
+  const tramite = await db.tramiteCatalogo.create({
+    data: {
+      nombre: parsed.data.nombre,
+      honorarioBase: parsed.data.honorarioBase,
+      orden: total + 1,
+    },
+  });
+
+  revalidatePath("/crm/catalogo");
+  revalidatePath("/");
+
+  return {
+    tramite: {
+      id: tramite.id,
+      nombre: tramite.nombre,
+      honorarioBase: tramite.honorarioBase,
+    },
+  };
+}
+
 export async function marcarDocumentosAction(casoId: string) {
   const session = await requireAgent();
   await db.caso.update({
