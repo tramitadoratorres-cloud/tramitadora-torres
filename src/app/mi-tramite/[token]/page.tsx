@@ -12,6 +12,7 @@ import {
   type Etapa,
 } from "@/lib/constants";
 import { formatFechaHora } from "@/lib/tiempo";
+import { esTramiteVisa } from "@/lib/academia";
 import { CopyButton } from "./copy-button";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,10 @@ export default async function MiTramitePage({
     include: { tramiteCatalogo: true },
     orderBy: { createdAt: "asc" },
   });
+
+  const tieneVisa =
+    esTramiteVisa(caso.tramiteCatalogo?.nombre) ||
+    hermanos.some((h) => esTramiteVisa(h.tramiteCatalogo?.nombre));
 
   return (
     <main className="min-h-screen bg-navy-900 pb-16">
@@ -175,6 +180,29 @@ export default async function MiTramitePage({
             </div>
           </div>
         </section>
+
+        {tieneVisa && (
+          <section className="mt-8">
+            <div className="rounded-lg bg-gradient-to-br from-navy-800 to-navy-900 p-6 text-cream shadow-lg">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-gold-bright">
+                🎓 Torres Academy
+              </p>
+              <p className="mt-3 font-serif text-xl font-semibold">
+                Prepárate para tu entrevista de visa
+              </p>
+              <p className="mt-1.5 text-sm text-cream-dim">
+                Curso completo con simulador de entrevista interactivo —
+                incluido sin costo en tu trámite.
+              </p>
+              <a
+                href={`/academia/${token}`}
+                className="mt-4 inline-block rounded bg-gold px-5 py-2.5 font-mono text-sm font-semibold text-navy-900 hover:bg-gold-bright"
+              >
+                Entrar a Torres Academy
+              </a>
+            </div>
+          </section>
+        )}
 
         {caso.citas.length > 0 && (
           <section className="mt-8">
