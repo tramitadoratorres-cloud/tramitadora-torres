@@ -17,6 +17,51 @@ export interface FormState {
   ok?: boolean;
 }
 
+const clienteSchema = z.object({
+  nombre: z.string().min(1, "El nombre es obligatorio"),
+  telefono: z.string().min(1, "El teléfono es obligatorio"),
+  email: z.string().email("Correo inválido").optional().or(z.literal("")),
+});
+
+export async function actualizarClienteAction(
+  clienteId: string,
+  casoId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireAgent();
+  const parsed = clienteSchema.safeParse({
+    nombre: formData.get("nombre"),
+    telefono: formData.get("telefono"),
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  await db.cliente.update({
+    where: { id: clienteId },
+    data: {
+      nombre: parsed.data.nombre,
+      telefono: parsed.data.telefono,
+      email: parsed.data.email || null,
+    },
+  });
+
+  await logActividad({
+    casoId,
+    userId: session.userId,
+    tipo: ACTIVIDAD_TIPO.NOTA,
+    descripcion: `${session.nombre} actualizó los datos de contacto del cliente`,
+  });
+
+  revalidatePath(`/crm/clientes/${casoId}`);
+  revalidatePath("/crm");
+  revalidatePath("/crm/buscar");
+  return { ok: true };
+}
+
 export interface CobroAdicionalState {
   error?: string;
   reciboId?: string;

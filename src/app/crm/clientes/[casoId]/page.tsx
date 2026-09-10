@@ -17,6 +17,7 @@ import { DS160Lista } from "./ds160-lista";
 import { ExpedienteSection } from "./expediente-section";
 import { ReactivarButton } from "../../buscar/reactivar-button";
 import { casoPrincipalDeExpediente } from "@/lib/expediente";
+import { ClienteInfo } from "./cliente-info";
 
 export default async function ClienteCasoPage({
   params,
@@ -93,13 +94,15 @@ export default async function ClienteCasoPage({
               <p className="font-mono text-xs uppercase tracking-wide text-ink/50">
                 Cliente
               </p>
-              <h1 className="mt-1 font-serif text-2xl font-semibold text-ink">
-                {caso.cliente.nombre}
-              </h1>
-              <p className="mt-1 text-sm text-ink/60">
-                {caso.cliente.telefono}
-                {caso.cliente.email ? ` · ${caso.cliente.email}` : ""}
-              </p>
+              <div className="mt-1">
+                <ClienteInfo
+                  clienteId={caso.cliente.id}
+                  casoId={caso.id}
+                  nombre={caso.cliente.nombre}
+                  telefono={caso.cliente.telefono}
+                  email={caso.cliente.email}
+                />
+              </div>
               {caso.paraQuien && (
                 <p className="mt-1 text-sm text-ink/70">
                   Este trámite es para: <strong>{caso.paraQuien}</strong>
