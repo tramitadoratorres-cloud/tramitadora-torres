@@ -29,6 +29,9 @@ export default async function CrmLayout({
               >
                 Pendientes
               </Link>
+              <Link href="/crm/cotizaciones" className="transition hover:text-gold-bright">
+                Cotizaciones
+              </Link>
               <Link
                 href="/crm/clientes/nuevo"
                 className="transition hover:text-gold-bright"

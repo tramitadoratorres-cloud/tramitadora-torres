@@ -8,6 +8,16 @@ function wa(mensaje: string) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
 
+function cotizadorPara(nombre: string) {
+  const texto = nombre.toLowerCase();
+  if (texto.includes("americano")) return "PASAPORTE_US";
+  if (texto.includes("pasaporte") && texto.includes("visa")) return "PAQUETE_PASAPORTE_VISA";
+  if (texto.includes("visa")) return "VISA_B12";
+  if (texto.includes("sentri")) return "SENTRI";
+  if (texto.includes("pasaporte")) return "PASAPORTE_MX";
+  return null;
+}
+
 // Evita que Next intente prerenderizar esta página en build time, cuando la
 // base de datos todavía no existe en el servidor de despliegue.
 export const dynamic = "force-dynamic";
@@ -41,12 +51,10 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3.5">
               <a
-                href={wa("Hola, quiero cotizar un trámite")}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/cotizador"
                 className="rounded bg-gold px-5 py-3 font-mono text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5 hover:bg-gold-bright"
               >
-                Cotiza por WhatsApp
+                Cotiza tu trámite
               </a>
               <a
                 href="#tramites"
@@ -122,6 +130,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {tramites.map((tramite, i) => {
+              const cotizador = cotizadorPara(tramite.nombre);
               const requisitos = tramite.requisitos
                 .split("\n")
                 .map((r) => r.trim())
@@ -201,6 +210,14 @@ export default async function HomePage() {
                       </details>
                     )}
                     <div className="flex flex-col gap-2">
+                      {cotizador && (
+                        <a
+                          href={`/cotizador?tramite=${cotizador}`}
+                          className="block rounded border border-navy-900 py-2.5 text-center font-mono text-sm font-semibold text-navy-900 transition hover:bg-navy-900 hover:text-cream"
+                        >
+                          Cotizar este trámite
+                        </a>
+                      )}
                       {tramite.linkPago && (
                         <a
                           href={`/pagar/${tramite.id}`}

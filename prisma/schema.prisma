@@ -52,6 +52,32 @@ model Cliente {
   createdAt  DateTime     @default(now())
   casos      Caso[]
   expedientes Expediente[]
+  cotizaciones Cotizacion[]
+}
+
+// Cotización generada en el minisitio público. Se conserva aunque el cliente
+// todavía no inicie su trámite; desde CRM se puede convertir a expediente.
+model Cotizacion {
+  id                    String   @id @default(cuid())
+  token                 String   @unique @default(cuid())
+  tipo                  String
+  adultos               Int      @default(0)
+  menores               Int      @default(0)
+  configuracionJson     String   @default("{}")
+  honorariosMXN         Int
+  derechosMXN           Int      @default(0)
+  derechosUSD           Int      @default(0)
+  totalMXN              Int
+  nombre                String
+  telefono              String
+  email                 String
+  clienteId             String?
+  cliente               Cliente? @relation(fields: [clienteId], references: [id])
+  convertidaEn          DateTime?
+  createdAt             DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([convertidaEn])
 }
 
 // Agrupa varios Casos (trámites) del mismo contacto en un solo expediente

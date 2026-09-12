@@ -26,6 +26,9 @@ export function SiteNav() {
             open ? "flex" : "hidden"
           } absolute inset-x-0 top-full flex-col gap-4 border-b border-cream/10 bg-navy-800 px-6 py-5 sm:static sm:flex sm:flex-row sm:items-center sm:gap-8 sm:border-none sm:bg-transparent sm:p-0`}
         >
+          <a href="/cotizador" className="text-sm font-semibold text-gold-bright transition hover:text-cream">
+            Cotizar
+          </a>
           <a href="#tramites" className="text-sm text-cream-dim transition hover:text-gold-bright">
             Trámites
           </a>
