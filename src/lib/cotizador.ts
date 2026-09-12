@@ -82,11 +82,20 @@ export type CotizacionCalculada = {
   honorariosMXN: number;
   derechosMXN: number;
   derechosUSD: number;
+  derechosUSDEnMXN: number;
   totalMXN: number;
   lineas: Array<{ etiqueta: string; cantidad: number; monto: number; moneda: "MXN" | "USD" }>;
   requisitos: string[];
   notas: string[];
 };
+
+// Tipo de cambio FIX de Banxico, 11 de septiembre de 2026. Se muestra como
+// referencia para consolidar el estimado; el cobro en USD puede variar al pagar.
+export const USD_A_MXN_REFERENCIA = 16.9707;
+
+export function equivalenteUSDEnMXN(dolares: number) {
+  return Math.round(dolares * USD_A_MXN_REFERENCIA);
+}
 
 const PASAPORTE_MX_DERECHOS: Record<3 | 6 | 10, number> = {
   3: 1795,
@@ -185,6 +194,7 @@ export function calcularCotizacion(config: ConfiguracionCotizacion): CotizacionC
   }
 
   const honorariosMXN = personas * tramite.honorarioPorPersona;
+  const derechosUSDEnMXN = equivalenteUSDEnMXN(derechosUSD);
   lineas.unshift({
     etiqueta: `Honorarios de gestoría · ${tramite.nombre}`,
     cantidad: personas,
@@ -200,7 +210,8 @@ export function calcularCotizacion(config: ConfiguracionCotizacion): CotizacionC
     honorariosMXN,
     derechosMXN,
     derechosUSD,
-    totalMXN: honorariosMXN + derechosMXN,
+    derechosUSDEnMXN,
+    totalMXN: honorariosMXN + derechosMXN + derechosUSDEnMXN,
     lineas,
     requisitos: [...tramite.requisitos],
     notas,

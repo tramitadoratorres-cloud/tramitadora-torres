@@ -59,6 +59,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     y -= 20;
     drawLine(page, "Derechos oficiales en USD", 42, y, regular, 10);
     page.drawText(formatUSD(result.derechosUSD), { x: 570 - regular.widthOfTextAtSize(formatUSD(result.derechosUSD), 10), y, size: 10, font: regular, color: navy });
+    y -= 20;
+    drawLine(page, "Equivalente de USD en MXN", 42, y, regular, 10);
+    page.drawText(formatMXN(result.derechosUSDEnMXN), { x: 570 - regular.widthOfTextAtSize(formatMXN(result.derechosUSDEnMXN), 10), y, size: 10, font: regular, color: navy });
   }
   y -= 30;
   page.drawRectangle({ x: 42, y: y - 14, width: 528, height: 38, color: rgb(0.93, 0.89, 0.78) });
@@ -72,7 +75,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     y -= 15;
   }
   y -= 12;
-  drawLine(page, "Importes de referencia sujetos a actualización por las dependencias. Esta cotización no sustituye el pago oficial.", 42, y, regular, 7.5);
+  drawLine(page, "USD convertidos a MXN con tipo de cambio de referencia; el cobro oficial puede variar al pagar.", 42, y, regular, 7.5);
   drawLine(page, "Para iniciar, envíanos tus documentos por WhatsApp y te guiamos paso a paso.", 42, y - 13, regular, 7.5);
 
   const bytes = await pdf.save();
