@@ -232,3 +232,76 @@ export const FUENTES_TARIFAS = {
   pasaporteEstadosUnidos: "https://travel.state.gov/content/dam/passports/forms-fees/Accessible_Passport_Fee_Chart_Apr_2026.pdf",
   sentri: "https://www.help.cbp.gov/s/article/Article-1068?language=en_US",
 };
+
+// ---- Cotizaciones con varios trámites (partidas) ----------------------------
+// Cada partida es un trámite con su propia cantidad de adultos y menores, p. ej.
+// 6 visas + 7 pasaportes = dos partidas. Se suman en una sola cotización.
+
+export const MAX_PARTIDAS = 20;
+
+export type CotizacionMultiCalculada = Omit<CotizacionCalculada, "tramite"> & {
+  nombre: string;
+  partidas: CotizacionCalculada[];
+};
+
+function personasDe(config: ConfiguracionCotizacion) {
+  return Math.max(0, Math.trunc(config.adultos) || 0) + Math.max(0, Math.trunc(config.menores) || 0);
+}
+
+export function calcularCotizacionMultiple(partidas: ConfiguracionCotizacion[]): CotizacionMultiCalculada {
+  const calculadas = partidas.filter((partida) => personasDe(partida) > 0).map(calcularCotizacion);
+  if (!calculadas.length) throw new Error("Selecciona al menos una persona.");
+
+  const suma = (campo: "adultos" | "menores" | "personas" | "honorariosMXN" | "derechosMXN" | "derechosUSD") =>
+    calculadas.reduce((total, item) => total + item[campo], 0);
+  const honorariosMXN = suma("honorariosMXN");
+  const derechosMXN = suma("derechosMXN");
+  const derechosUSD = suma("derechosUSD");
+  const derechosUSDEnMXN = equivalenteUSDEnMXN(derechosUSD);
+
+  return {
+    nombre: [...new Set(calculadas.map((item) => item.tramite.nombre))].join(" + "),
+    partidas: calculadas,
+    adultos: suma("adultos"),
+    menores: suma("menores"),
+    personas: suma("personas"),
+    honorariosMXN,
+    derechosMXN,
+    derechosUSD,
+    derechosUSDEnMXN,
+    totalMXN: honorariosMXN + derechosMXN + derechosUSDEnMXN,
+    lineas: calculadas.flatMap((item) => item.lineas),
+    requisitos: [...new Set(calculadas.flatMap((item) => item.requisitos))],
+    notas: [...new Set(calculadas.flatMap((item) => item.notas))],
+  };
+}
+
+// Lee la configuración guardada: formato nuevo ({ partidas: [...] }) o el
+// anterior (una sola configuración), para que las cotizaciones viejas sigan abriendo.
+export function partidasDeConfiguracion(configuracionJson: string): ConfiguracionCotizacion[] {
+  const data = JSON.parse(configuracionJson);
+  return Array.isArray(data?.partidas) ? data.partidas : [data];
+}
+
+export function nombreDeCotizacion(tipo: string, configuracionJson: string) {
+  try {
+    const nombres = partidasDeConfiguracion(configuracionJson)
+      .map((partida): string | undefined => COTIZADOR_TRAMITES.find((item) => item.id === partida.tramite)?.nombre)
+      .filter((nombre): nombre is string => Boolean(nombre));
+    if (nombres.length) return [...new Set(nombres)].join(" + ");
+  } catch {}
+  return COTIZADOR_TRAMITES.find((item) => item.id === tipo)?.nombre ?? tipo;
+}
+
+export function describirPartidas(configuracionJson: string): string[] {
+  try {
+    return partidasDeConfiguracion(configuracionJson)
+      .filter((partida) => personasDe(partida) > 0)
+      .map((partida) => {
+        const nombre = COTIZADOR_TRAMITES.find((item) => item.id === partida.tramite)?.nombre ?? partida.tramite;
+        return `${nombre}: ${partida.adultos} adulto(s) · ${partida.menores} menor(es)`;
+      });
+  } catch {
+    return [];
+  }
+}

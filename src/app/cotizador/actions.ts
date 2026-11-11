@@ -3,11 +3,9 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
-  calcularCotizacion,
+  calcularCotizacionMultiple,
+  MAX_PARTIDAS,
   type ConfiguracionCotizacion,
-  type CotizadorTramiteId,
-  type DocumentoUS,
-  type ModalidadAdultoUS,
 } from "@/lib/cotizador";
 
 export type CotizadorState = {
@@ -16,34 +14,37 @@ export type CotizadorState = {
   token?: string;
 };
 
+const partidaSchema = z.object({
+  tramite: z.enum(["PASAPORTE_MX", "PASAPORTE_US", "VISA_B12", "SENTRI", "PAQUETE_PASAPORTE_VISA"]),
+  adultos: z.coerce.number().int().min(0).max(999),
+  menores: z.coerce.number().int().min(0).max(999),
+  vigenciaPasaporte: z.union([z.literal(3), z.literal(6), z.literal(10)]).optional(),
+  documentoAdultoUS: z.enum(["LIBRETA", "TARJETA", "AMBOS"]).optional(),
+  documentoMenorUS: z.enum(["LIBRETA", "TARJETA", "AMBOS"]).optional(),
+  modalidadAdultoUS: z.enum(["PRIMERA_VEZ", "RENOVACION"]).optional(),
+});
+
 const schema = z.object({
   nombre: z.string().trim().min(2, "Escribe tu nombre completo."),
   telefono: z.string().trim().min(7, "Escribe un celular válido."),
   email: z.string().trim().email("Escribe un correo válido."),
-  tramite: z.enum(["PASAPORTE_MX", "PASAPORTE_US", "VISA_B12", "SENTRI", "PAQUETE_PASAPORTE_VISA"]),
-  adultos: z.coerce.number().int().min(0).max(999),
-  menores: z.coerce.number().int().min(0).max(999),
-  vigenciaPasaporte: z.coerce.number().int().optional(),
-  documentoAdultoUS: z.enum(["LIBRETA", "TARJETA", "AMBOS"]).optional(),
-  documentoMenorUS: z.enum(["LIBRETA", "TARJETA", "AMBOS"]).optional(),
-  modalidadAdultoUS: z.enum(["PRIMERA_VEZ", "RENOVACION"]).optional(),
+  partidas: z.array(partidaSchema).min(1, "Agrega al menos un trámite.").max(MAX_PARTIDAS),
 });
 
 export async function guardarCotizacionAction(
   _prevState: CotizadorState,
   formData: FormData
 ): Promise<CotizadorState> {
+  let partidasCrudas: unknown = [];
+  try {
+    partidasCrudas = JSON.parse(String(formData.get("partidas") ?? "[]"));
+  } catch {}
+
   const parsed = schema.safeParse({
     nombre: formData.get("nombre"),
     telefono: formData.get("telefono"),
     email: formData.get("email"),
-    tramite: formData.get("tramite"),
-    adultos: formData.get("adultos"),
-    menores: formData.get("menores"),
-    vigenciaPasaporte: formData.get("vigenciaPasaporte") || undefined,
-    documentoAdultoUS: formData.get("documentoAdultoUS") || undefined,
-    documentoMenorUS: formData.get("documentoMenorUS") || undefined,
-    modalidadAdultoUS: formData.get("modalidadAdultoUS") || undefined,
+    partidas: partidasCrudas,
   });
 
   if (!parsed.success) {
@@ -51,23 +52,15 @@ export async function guardarCotizacionAction(
   }
 
   try {
-    const config: ConfiguracionCotizacion = {
-      tramite: parsed.data.tramite as CotizadorTramiteId,
-      adultos: parsed.data.adultos,
-      menores: parsed.data.menores,
-      vigenciaPasaporte: parsed.data.vigenciaPasaporte as 3 | 6 | 10 | undefined,
-      documentoAdultoUS: parsed.data.documentoAdultoUS as DocumentoUS | undefined,
-      documentoMenorUS: parsed.data.documentoMenorUS as DocumentoUS | undefined,
-      modalidadAdultoUS: parsed.data.modalidadAdultoUS as ModalidadAdultoUS | undefined,
-    };
-    const calculada = calcularCotizacion(config);
+    const partidas: ConfiguracionCotizacion[] = parsed.data.partidas;
+    const calculada = calcularCotizacionMultiple(partidas);
 
     const cotizacion = await db.cotizacion.create({
       data: {
-        tipo: config.tramite,
+        tipo: partidas.length === 1 ? partidas[0].tramite : "MULTIPLE",
         adultos: calculada.adultos,
         menores: calculada.menores,
-        configuracionJson: JSON.stringify(config),
+        configuracionJson: JSON.stringify({ partidas }),
         honorariosMXN: calculada.honorariosMXN,
         derechosMXN: calculada.derechosMXN,
         derechosUSD: calculada.derechosUSD,

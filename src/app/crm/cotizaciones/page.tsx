@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatMXN } from "@/lib/constants";
-import { formatUSD, COTIZADOR_TRAMITES } from "@/lib/cotizador";
+import { formatUSD, nombreDeCotizacion, describirPartidas } from "@/lib/cotizador";
 import { convertirCotizacionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +24,11 @@ export default async function CotizacionesPage() {
           </thead>
           <tbody className="divide-y divide-ink/8">
             {cotizaciones.map((quote) => {
-              const tramite = COTIZADOR_TRAMITES.find((item) => item.id === quote.tipo)?.nombre ?? quote.tipo;
+              const tramite = nombreDeCotizacion(quote.tipo, quote.configuracionJson);
+              const partidas = describirPartidas(quote.configuracionJson);
               return <tr key={quote.id}>
                 <td className="px-4 py-4"><strong>{quote.nombre}</strong><br /><a className="text-xs text-navy-700 hover:underline" href={`https://wa.me/${quote.telefono.replace(/\D/g, "")}`}>{quote.telefono}</a><br /><span className="text-xs text-ink/55">{quote.email}</span></td>
-                <td className="px-4 py-4"><strong>{tramite}</strong><br /><span className="text-xs text-ink/55">{quote.adultos} adulto(s) · {quote.menores} menor(es)</span></td>
+                <td className="px-4 py-4"><strong>{tramite}</strong><br />{partidas.length > 1 ? partidas.map((linea) => <span key={linea} className="block text-xs text-ink/55">{linea}</span>) : <span className="text-xs text-ink/55">{quote.adultos} adulto(s) · {quote.menores} menor(es)</span>}</td>
                 <td className="px-4 py-4 text-xs"><div>Honorarios: <strong>{formatMXN(quote.honorariosMXN)}</strong></div><div>Derechos: {formatMXN(quote.derechosMXN)}{quote.derechosUSD ? ` + ${formatUSD(quote.derechosUSD)}` : ""}</div><div className="mt-1 font-semibold">Total MXN: {formatMXN(quote.totalMXN)}</div></td>
                 <td className="px-4 py-4 text-xs text-ink/65">{quote.createdAt.toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}</td>
                 <td className="px-4 py-4">{quote.convertidaEn ? <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Convertida</span> : <span className="rounded-full bg-gold/15 px-2 py-1 text-xs font-semibold text-navy-800">Pendiente</span>}</td>

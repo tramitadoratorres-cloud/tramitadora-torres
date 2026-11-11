@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAgent } from "@/lib/session";
 import { ACTIVIDAD_TIPO, ORIGEN } from "@/lib/constants";
-import { COTIZADOR_TRAMITES } from "@/lib/cotizador";
+import { nombreDeCotizacion } from "@/lib/cotizador";
 
 export async function convertirCotizacionAction(formData: FormData) {
   const session = await requireAgent();
@@ -12,7 +12,7 @@ export async function convertirCotizacionAction(formData: FormData) {
   const quote = await db.cotizacion.findUnique({ where: { id: cotizacionId } });
   if (!quote || quote.convertidaEn) return;
 
-  const tramite = COTIZADOR_TRAMITES.find((item) => item.id === quote.tipo)?.nombre ?? "Trámite cotizado";
+  const tramite = nombreDeCotizacion(quote.tipo, quote.configuracionJson) || "Trámite cotizado";
   const personas = quote.adultos + quote.menores;
   await db.$transaction(async (tx) => {
     const cliente = await tx.cliente.create({
