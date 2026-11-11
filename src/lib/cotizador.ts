@@ -137,8 +137,8 @@ function etiquetaDocumento(documento: DocumentoUS) {
 
 export function calcularCotizacion(config: ConfiguracionCotizacion): CotizacionCalculada {
   const tramite = tramitePorId(config.tramite);
-  const adultos = Math.max(0, Math.min(3, Math.trunc(config.adultos)));
-  const menores = Math.max(0, Math.min(3, Math.trunc(config.menores)));
+  const adultos = Math.max(0, Math.min(999, Math.trunc(config.adultos)));
+  const menores = Math.max(0, Math.min(999, Math.trunc(config.menores)));
   const personas = adultos + menores;
 
   if (!personas) throw new Error("Selecciona al menos una persona.");
