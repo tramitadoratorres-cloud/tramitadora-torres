@@ -14,6 +14,7 @@ import {
 import { formatFechaHora } from "@/lib/tiempo";
 import { esTramiteVisa } from "@/lib/academia";
 import { CopyButton } from "./copy-button";
+import { iniciarPagoClipAction } from "./clip-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -178,6 +179,20 @@ export default async function MiTramitePage({
                 </dd>
               </dl>
             </div>
+
+            {precio != null && !caso.pagado && (
+              <div className="rounded-lg border border-gold/45 bg-paper p-4 text-ink shadow">
+                <p className="font-serif font-semibold">Pago con tarjeta</p>
+                <p className="mt-1 text-sm text-ink/60">
+                  Paga de forma segura con crédito o débito mediante Clip.
+                </p>
+                <form action={iniciarPagoClipAction.bind(null, token)}>
+                  <button type="submit" className="mt-3 w-full rounded bg-gold px-4 py-2.5 font-mono text-sm font-semibold text-navy-900 transition hover:bg-gold-bright">
+                    Pagar {formatMXN(precio)} con tarjeta
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </section>
 
