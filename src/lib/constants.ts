@@ -111,10 +111,10 @@ export const WHATSAPP_DISPLAY = "+52 664 445 8145";
 // cualquier OXXO), mostrada en el ticket virtual del cliente junto con el
 // link de pago en línea de Stripe.
 export const DATOS_PAGO_MANUAL = {
-  banco: "BBVA",
+  banco: "Revolut",
   titular: "Jorge Cervantes Torres",
-  tarjeta: "4152314216119837",
-  clabe: "012028015010935955",
+  tarjeta: "5319950020079803",
+  clabe: "170180010354065081",
 };
 
 // Agrupa dígitos de 4 en 4 para que sean más fáciles de leer y copiar a mano.
