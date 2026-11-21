@@ -5,110 +5,29 @@ import { calcularCotizacionMultiple, formatUSD, partidasDeConfiguracion, type Co
 import { formatMXN } from "@/lib/constants";
 
 export const runtime = "nodejs";
+const NAVY = rgb(0.06, 0.12, 0.22); const GOLD = rgb(0.54, 0.42, 0.15); const INK = rgb(0.12, 0.17, 0.27); const FAINT = rgb(0.45, 0.45, 0.48);
 
-function drawLine(page: PDFPage, text: string, x: number, y: number, font: PDFFont, size = 9) {
-  page.drawText(text, { x, y, size, font, color: rgb(0.12, 0.17, 0.27) });
-}
+function wrap(value: string, font: PDFFont, size: number, max: number) { const lines: string[] = []; let line = ""; for (const word of value.split(/\s+/).filter(Boolean)) { const next = line ? `${line} ${word}` : word; if (line && font.widthOfTextAtSize(next, size) > max) { lines.push(line); line = word; } else line = next; } if (line) lines.push(line); return lines; }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
-  const quote = await db.cotizacion.findUnique({ where: { token } });
-  if (!quote) return new NextResponse("Cotización no encontrada", { status: 404 });
+  const { token } = await params; const quote = await db.cotizacion.findUnique({ where: { token } }); if (!quote) return new NextResponse("Cotización no encontrada", { status: 404 });
+  let partidas: ConfiguracionCotizacion[]; try { partidas = partidasDeConfiguracion(quote.configuracionJson); } catch { return new NextResponse("Cotización inválida", { status: 500 }); }
+  let result: ReturnType<typeof calcularCotizacionMultiple>; try { result = calcularCotizacionMultiple(partidas); } catch { return new NextResponse("Cotización inválida", { status: 500 }); }
+  const pdf = await PDFDocument.create(); const bold = await pdf.embedFont(StandardFonts.HelveticaBold); const regular = await pdf.embedFont(StandardFonts.Helvetica); const width = 612; const height = 792; const margin = 42; let page!: PDFPage; let y = 0; let number = 0;
+  const newPage = () => { page = pdf.addPage([width, height]); number++; page.drawRectangle({ x: 0, y: height - 84, width, height: 84, color: NAVY }); page.drawText("TRAMITADORA TORRES", { x: margin, y: height - 39, size: 18, font: bold, color: rgb(1, 1, 1) }); page.drawText("Cotización de trámite", { x: margin, y: height - 61, size: 10.5, font: regular, color: rgb(0.88, 0.78, 0.48) }); page.drawLine({ start: { x: margin, y: 38 }, end: { x: width - margin, y: 38 }, thickness: 0.5, color: rgb(0.75, 0.72, 0.65) }); page.drawText(`Tramitadora Torres · Página ${number}`, { x: margin, y: 24, size: 7.5, font: regular, color: FAINT }); y = height - 118; };
+  const ensure = (space: number) => { if (y - space < 58) newPage(); };
+  const line = (value: string, x: number, size = 9, color = INK) => page.drawText(value, { x, y, size, font: regular, color });
+  const paragraph = (value: string, x: number, max: number, size = 9, font = regular, color = INK, leading = 13) => { const lines = wrap(value, font, size, max); ensure(lines.length * leading + 4); lines.forEach((item, index) => page.drawText(item, { x, y: y - index * leading, size, font, color })); y -= lines.length * leading; };
+  const heading = (value: string) => { ensure(28); page.drawText(value, { x: margin, y, size: 10, font: bold, color: GOLD }); y -= 22; };
+  const row = (label: string, amount: string) => { const amountWidth = regular.widthOfTextAtSize(amount, 9); const labelMax = width - margin * 2 - amountWidth - 22; const labels = wrap(label, regular, 9, labelMax); ensure(labels.length * 14 + 2); labels.forEach((item, index) => page.drawText(item, { x: margin, y: y - index * 14, size: 9, font: regular, color: INK })); page.drawText(amount, { x: width - margin - amountWidth, y, size: 9, font: regular, color: INK }); y -= labels.length * 14; };
+  const summaryRow = (label: string, amount: string, strong = false) => { ensure(20); const font = strong ? bold : regular; page.drawText(label, { x: margin, y, size: 10, font, color: INK }); page.drawText(amount, { x: width - margin - font.widthOfTextAtSize(amount, 10), y, size: 10, font, color: INK }); y -= 21; };
 
-  let partidas: ConfiguracionCotizacion[];
-  try {
-    partidas = partidasDeConfiguracion(quote.configuracionJson);
-  } catch {
-    return new NextResponse("Cotización inválida", { status: 500 });
-  }
-  let result: ReturnType<typeof calcularCotizacionMultiple>;
-  try {
-    result = calcularCotizacionMultiple(partidas);
-  } catch {
-    return new NextResponse("Cotización inválida", { status: 500 });
-  }
-  const pdf = await PDFDocument.create();
-  let page = pdf.addPage([612, 792]);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const navy = rgb(0.06, 0.12, 0.22);
-
-  page.drawRectangle({ x: 0, y: 708, width: 612, height: 84, color: navy });
-  page.drawText("TRAMITADORA TORRES", { x: 42, y: 753, size: 19, font: bold, color: rgb(1, 1, 1) });
-  page.drawText("Cotización de trámite", { x: 42, y: 731, size: 11, font: regular, color: rgb(0.88, 0.78, 0.48) });
-  drawLine(page, `Folio: ${quote.token.slice(-8).toUpperCase()}  ·  ${quote.createdAt.toLocaleDateString("es-MX")}`, 42, 678, regular);
-  drawLine(page, quote.nombre, 42, 650, bold, 15);
-  drawLine(page, `${quote.telefono}  ·  ${quote.email}`, 42, 634, regular);
-  const titulo = result.partidas.length > 1 ? "Cotización de varios trámites" : result.nombre;
-  drawLine(page, titulo, 42, 594, bold, 16);
-  drawLine(page, `${result.adultos} adulto(s) · ${result.menores} menor(es) · ${result.personas} persona(s)`, 42, 576, regular);
-
-  let y = 540;
-  // Si el contenido no cabe, continúa en una página nueva.
-  const asegurarEspacio = (necesario: number) => {
-    if (y - necesario < 60) {
-      page = pdf.addPage([612, 792]);
-      y = 740;
-    }
-  };
-  if (result.partidas.length > 1) {
-    page.drawText("TRÁMITES INCLUIDOS", { x: 42, y, size: 10, font: bold, color: rgb(0.54, 0.42, 0.15) });
-    y -= 20;
-    for (const partida of result.partidas) {
-      asegurarEspacio(18);
-      drawLine(page, `${partida.tramite.nombre}: ${partida.adultos} adulto(s) · ${partida.menores} menor(es)`, 42, y, regular, 9);
-      y -= 16;
-    }
-    y -= 20;
-  }
-  page.drawText("DESGLOSE", { x: 42, y, size: 10, font: bold, color: rgb(0.54, 0.42, 0.15) });
-  y -= 24;
-  for (const line of result.lineas) {
-    asegurarEspacio(18);
-    const total = line.monto * line.cantidad;
-    drawLine(page, `${line.cantidad} × ${line.etiqueta}`, 42, y, regular, 8.5);
-    const amount = line.moneda === "MXN" ? formatMXN(total) : formatUSD(total);
-    page.drawText(amount, { x: 492 - regular.widthOfTextAtSize(amount, 8.5), y, size: 8.5, font: regular, color: navy });
-    y -= 18;
-  }
-  asegurarEspacio(170);
-  y -= 8;
-  page.drawLine({ start: { x: 42, y }, end: { x: 570, y }, thickness: 0.7, color: rgb(0.7, 0.68, 0.62) });
-  y -= 24;
-  drawLine(page, "Honorarios de gestoría", 42, y, bold, 10);
-  page.drawText(formatMXN(result.honorariosMXN), { x: 570 - bold.widthOfTextAtSize(formatMXN(result.honorariosMXN), 10), y, size: 10, font: bold, color: navy });
-  y -= 20;
-  drawLine(page, "Derechos oficiales en MXN", 42, y, regular, 10);
-  page.drawText(formatMXN(result.derechosMXN), { x: 570 - regular.widthOfTextAtSize(formatMXN(result.derechosMXN), 10), y, size: 10, font: regular, color: navy });
-  if (result.derechosUSD) {
-    y -= 20;
-    drawLine(page, "Derechos oficiales en USD", 42, y, regular, 10);
-    page.drawText(formatUSD(result.derechosUSD), { x: 570 - regular.widthOfTextAtSize(formatUSD(result.derechosUSD), 10), y, size: 10, font: regular, color: navy });
-    y -= 20;
-    drawLine(page, "Equivalente de USD en MXN", 42, y, regular, 10);
-    page.drawText(formatMXN(result.derechosUSDEnMXN), { x: 570 - regular.widthOfTextAtSize(formatMXN(result.derechosUSDEnMXN), 10), y, size: 10, font: regular, color: navy });
-  }
-  y -= 30;
-  page.drawRectangle({ x: 42, y: y - 14, width: 528, height: 38, color: rgb(0.93, 0.89, 0.78) });
-  drawLine(page, "Total estimado en MXN", 55, y, bold, 11);
-  page.drawText(formatMXN(result.totalMXN), { x: 557 - bold.widthOfTextAtSize(formatMXN(result.totalMXN), 13), y: y - 1, size: 13, font: bold, color: navy });
-  y -= 58;
-  asegurarEspacio(60 + result.requisitos.length * 15);
-  page.drawText("REQUISITOS PARA INICIAR", { x: 42, y, size: 10, font: bold, color: rgb(0.54, 0.42, 0.15) });
-  y -= 18;
-  for (const requirement of result.requisitos) {
-    drawLine(page, `• ${requirement}`, 42, y, regular, 8.5);
-    y -= 15;
-  }
-  y -= 12;
-  drawLine(page, "USD convertidos a MXN con tipo de cambio de referencia; el cobro oficial puede variar al pagar.", 42, y, regular, 7.5);
-  drawLine(page, "Para iniciar, envíanos tus documentos por WhatsApp y te guiamos paso a paso.", 42, y - 13, regular, 7.5);
-
-  const bytes = await pdf.save();
-  return new NextResponse(Buffer.from(bytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=cotizacion-${quote.token.slice(-8)}.pdf`,
-    },
-  });
+  newPage(); line(`Folio: ${quote.token.slice(-8).toUpperCase()} · ${quote.createdAt.toLocaleDateString("es-MX")}`, margin, 9); y -= 25; paragraph(quote.nombre, margin, width - margin * 2, 16, bold, INK, 20); y -= 2; paragraph(`${quote.telefono} · ${quote.email}`, margin, width - margin * 2, 9, regular, INK, 13); y -= 25;
+  paragraph(result.partidas.length > 1 ? "Cotización de varios trámites" : result.nombre, margin, width - margin * 2, 16, bold, INK, 20); paragraph(`${result.adultos} adulto(s) · ${result.menores} menor(es) · ${result.personas} persona(s)`, margin, width - margin * 2, 9); y -= 20;
+  if (result.partidas.length > 1) { heading("TRÁMITES INCLUIDOS"); for (const partida of result.partidas) paragraph(`${partida.tramite.nombre}: ${partida.adultos} adulto(s) · ${partida.menores} menor(es)`, margin, width - margin * 2, 9); y -= 14; }
+  heading("DESGLOSE"); for (const item of result.lineas) row(`${item.cantidad} × ${item.etiqueta.replaceAll("·", "-")}`, item.moneda === "MXN" ? formatMXN(item.cantidad * item.monto) : formatUSD(item.cantidad * item.monto)); y -= 9;
+  ensure(330); page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 0.7, color: rgb(0.7, 0.68, 0.62) }); y -= 23; summaryRow("Honorarios de gestoría", formatMXN(result.honorariosMXN), true); summaryRow("Derechos oficiales en MXN", formatMXN(result.derechosMXN)); if (result.derechosUSD) { summaryRow("Derechos oficiales en USD", formatUSD(result.derechosUSD)); summaryRow("Equivalente de USD en MXN", formatMXN(result.derechosUSDEnMXN)); }
+  ensure(65); page.drawRectangle({ x: margin, y: y - 22, width: width - margin * 2, height: 38, color: rgb(0.93, 0.89, 0.78) }); page.drawText("Total estimado en MXN", { x: margin + 13, y: y - 9, size: 11, font: bold, color: INK }); const total = formatMXN(result.totalMXN); page.drawText(total, { x: width - margin - 13 - bold.widthOfTextAtSize(total, 13), y: y - 10, size: 13, font: bold, color: INK }); y -= 65;
+  heading("REQUISITOS PARA INICIAR"); for (const item of result.requisitos) paragraph(`- ${item}`, margin, width - margin * 2, 8.8, regular, INK, 13); y -= 10; paragraph("USD convertidos a MXN con tipo de cambio de referencia; el cobro oficial puede variar al pagar.", margin, width - margin * 2, 7.6, regular, FAINT, 10); paragraph("Para iniciar, envíanos tus documentos por WhatsApp y te guiamos paso a paso.", margin, width - margin * 2, 7.6, regular, FAINT, 10);
+  const bytes = await pdf.save(); return new NextResponse(Buffer.from(bytes), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename=cotizacion-${quote.token.slice(-8)}.pdf` } });
 }
